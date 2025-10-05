@@ -25,27 +25,32 @@ export default function AdminPage() {
 
   async function fetchItems() {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('items')
-      .select('*')
-      .order('published_at', { ascending: false })
-      .limit(100)
-    if (error) {
+    try {
+      const res = await fetch('/api/admin/list')
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.detail || json.error || 'Failed to load')
+      setItems((json.items || []) as Item[])
+    } catch (e) {
       // eslint-disable-next-line no-console
-      console.error(error)
-    } else {
-      setItems((data || []) as Item[])
+      console.error(e)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   async function toggleVisible(id: string, current: boolean) {
-    const { error } = await supabase.from('items').update({ visible: !current }).eq('id', id)
-    if (error) {
-      // eslint-disable-next-line no-console
-      console.error(error)
-    } else {
+    try {
+      const res = await fetch('/api/admin/toggle-visible', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, visible: !current }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.detail || json.error || 'Failed')
       fetchItems()
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e)
     }
   }
 

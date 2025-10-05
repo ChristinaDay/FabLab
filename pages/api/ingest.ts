@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import Parser from 'rss-parser'
-import { upsertItem } from '@/lib/db'
+import { getServiceRoleClient, upsertItemServer } from '@/lib/db'
 
 type Body = { feedUrl?: string }
 
@@ -18,13 +18,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const feed = await parser.parseURL(feedUrl)
     const items = feed.items ?? []
     let count = 0
+    const client = getServiceRoleClient()
     for (const item of items.slice(0, 20)) {
       const publishedAt = item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString()
       const thumbnail =
         (item.enclosure && (item.enclosure as any).url) ||
         ((item as any)['media:thumbnail'] && ((item as any)['media:thumbnail'] as any).url) ||
         null
-      await upsertItem({
+      await upsertItemServer(client, {
         title: item.title || 'Untitled',
         link: item.link || '',
         excerpt: (item as any).contentSnippet || (item as any).content || '',
