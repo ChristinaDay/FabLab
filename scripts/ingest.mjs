@@ -38,9 +38,19 @@ async function ingest(feedUrl) {
 }
 
 async function main() {
-  const feeds = (process.env.FEEDS || '').split(',').map((s) => s.trim()).filter(Boolean)
+  // Load active feeds from DB
+  const { data: feedsRows, error: feedsErr } = await client
+    .from('feeds')
+    .select('url')
+    .eq('active', true)
+    .order('created_at', { ascending: true })
+  if (feedsErr) {
+    console.error('Failed to load feeds:', feedsErr.message)
+    process.exit(1)
+  }
+  const feeds = (feedsRows || []).map((r) => r.url).filter(Boolean)
   if (feeds.length === 0) {
-    console.error('No feeds provided. Set FEEDS env as comma-separated list.')
+    console.error('No active feeds found in table. Add rows to public.feeds.')
     process.exit(1)
   }
   let total = 0
