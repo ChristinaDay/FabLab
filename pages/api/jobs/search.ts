@@ -68,20 +68,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .filter(Boolean)
       ))
       if (strict && tokens.length > 0) {
-        // Strict: require phrase or ALL tokens present
+        // Strict: prefer structured fields
         rows = rows.filter((r: any) => {
+          const city = String(r.city || '').toLowerCase()
+          const state = String(r.state || '').toLowerCase()
+          const country = String(r.country || '').toLowerCase()
           const hay = `${r.location || ''} ${r.description || ''}`.toLowerCase()
-          if (phrase && hay.includes(phrase)) return true
-          return tokens.every((t) => hay.includes(t))
+          if (phrase && (city.includes(phrase) || state.includes(phrase) || country.includes(phrase) || hay.includes(phrase))) return true
+          return tokens.every((t) => city.includes(t) || state.includes(t) || country.includes(t) || hay.includes(t))
         })
       } else {
         // Rank by relevance
         rows = rows
           .map((r: any) => {
+            const city = String(r.city || '').toLowerCase()
+            const state = String(r.state || '').toLowerCase()
+            const country = String(r.country || '').toLowerCase()
             const hay = `${r.location || ''} ${r.description || ''}`.toLowerCase()
             let score = 0
-            if (phrase && hay.includes(phrase)) score += 3
-            for (const t of tokens) if (hay.includes(t)) score += 1
+            if (phrase && (city.includes(phrase) || state.includes(phrase) || country.includes(phrase) || hay.includes(phrase))) score += 3
+            for (const t of tokens) if (city.includes(t) || state.includes(t) || country.includes(t) || hay.includes(t)) score += 1
             return { r, score }
           })
           .sort((a: any, b: any) => b.score - a.score)
