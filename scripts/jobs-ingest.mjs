@@ -152,7 +152,7 @@ async function fetchJSearch(query, label, tags, autoPublish, opts = {}) {
       const title = j.job_title || 'Untitled'
       const company = j.employer_name || label || 'JSearch'
       const location = j.job_city || j.job_location || ''
-      const description = (j.job_description || '').slice(0, 2000)
+      const description = jsearchSnippet(j)
       const published = j.job_posted_at_datetime_utc || j.job_posted_at_timestamp || null
       const text = `${title} ${company} ${location} ${description}`
       if (!withinMaxAge(published, maxAge)) continue
@@ -197,6 +197,17 @@ function buildScore(text, tags = [], include = [], exclude = []) {
   for (const inc of include) if (hay.includes(String(inc).toLowerCase())) score += 1
   for (const exc of exclude) if (hay.includes(String(exc).toLowerCase())) score -= 2
   return score
+}
+
+function jsearchSnippet(j) {
+  const hl = j.job_highlights || {}
+  const blocks = []
+  for (const key of ['Qualifications', 'Responsibilities', 'Benefits']) {
+    if (Array.isArray(hl[key]) && hl[key].length) blocks.push(hl[key].slice(0, 3).join(' • '))
+  }
+  const snippet = blocks.join(' | ')
+  const desc = (j.job_description || '').replace(/\s+/g, ' ').trim()
+  return (snippet || desc).slice(0, 2000)
 }
 
 async function main() {

@@ -15,7 +15,8 @@ export default function Jobs({ jobs }: { jobs: any[] }) {
                 <div>
                   <div className="font-semibold text-lg">{j.title}</div>
                   <div className="text-sm text-gray-600">{j.company} {j.location ? `• ${j.location}` : ''}</div>
-                  <p className="mt-2 text-sm text-gray-700">{j.description}</p>
+                  <p className="mt-2 text-sm text-gray-700">{(j.description || '').slice(0, 280)}</p>
+                  <div className="text-xs text-gray-500 mt-1">Source: {j.source}</div>
                 </div>
                 <a href={j.link} target="_blank" rel="noreferrer" className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700">Apply</a>
               </div>
