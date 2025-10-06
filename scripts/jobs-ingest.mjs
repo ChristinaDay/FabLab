@@ -111,6 +111,7 @@ async function fetchAdzuna(query, label, tags, autoPublish, opts = {}) {
       const text = `${title} ${company} ${location} ${description}`
       if (!withinMaxAge(j.created, maxAge)) continue
       const score = buildScore(text, tags, include, exclude)
+      const gatingEnabled = (include.length > 0 || exclude.length > 0)
       await upsertJob({
         title,
         company,
@@ -120,7 +121,7 @@ async function fetchAdzuna(query, label, tags, autoPublish, opts = {}) {
         source: 'adzuna',
         tags,
         published_at: j.created || new Date().toISOString(),
-        visible: !!autoPublish && score >= 3,
+        visible: gatingEnabled ? (!!autoPublish && score >= 3) : !!autoPublish,
       })
       count++
     }
@@ -161,6 +162,7 @@ async function fetchJSearch(query, label, tags, autoPublish, opts = {}) {
       const text = `${title} ${company} ${location} ${description}`
       if (!withinMaxAge(published, maxAge)) continue
       const score = buildScore(text, tags, include, exclude)
+      const gatingEnabled = (include.length > 0 || exclude.length > 0)
       await upsertJob({
         title,
         company,
@@ -170,7 +172,7 @@ async function fetchJSearch(query, label, tags, autoPublish, opts = {}) {
         source: 'jsearch',
         tags,
         published_at: published ? new Date(published).toISOString() : new Date().toISOString(),
-        visible: !!autoPublish && score >= 3,
+        visible: gatingEnabled ? (!!autoPublish && score >= 3) : !!autoPublish,
       })
       count++
     }
