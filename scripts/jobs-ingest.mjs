@@ -32,12 +32,15 @@ async function fetchGreenhouse(org, label, tags, autoPublish) {
   for (const j of jobs) {
     const link = j.absolute_url || ''
     if (!link) continue
+    const raw = (j.content || '')
+    const decoded = decodeHtml(raw)
+    const plain = stripHtml(decoded).slice(0, 2000)
     await upsertJob({
       title: j.title || 'Untitled',
       company: label || org,
       location: (j.location && j.location.name) || '',
       link,
-      description: (j.content && stripHtml(j.content).slice(0, 2000)) || '',
+      description: plain,
       source: 'greenhouse',
       tags,
       published_at: j.updated_at || new Date().toISOString(),
@@ -176,6 +179,15 @@ async function fetchJSearch(query, label, tags, autoPublish, opts = {}) {
 
 function stripHtml(html) {
   return String(html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function decodeHtml(text) {
+  return String(text || '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
 }
 
 function withinMaxAge(iso, maxDays) {

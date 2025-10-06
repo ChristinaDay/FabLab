@@ -20,6 +20,15 @@ function stripHtml(html?: string) {
   return String(html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
+function decodeHtml(text?: string) {
+  return String(text || '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+}
+
 async function runGreenhouse(org: string, label?: string, tags?: string[], auto = true) {
   const url = `https://boards-api.greenhouse.io/v1/boards/${encodeURIComponent(org)}/jobs?content=true`
   const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' } })
@@ -29,12 +38,15 @@ async function runGreenhouse(org: string, label?: string, tags?: string[], auto 
   for (const j of jobs) {
     const link = j.absolute_url || ''
     if (!link) continue
+    const raw = (j.content || '')
+    const decoded = decodeHtml(raw)
+    const plain = decoded.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 2000)
     await upsertJob({
       title: j.title || 'Untitled',
       company: label || org,
       location: (j.location && j.location.name) || '',
       link,
-      description: j.content ? stripHtml(j.content).slice(0, 2000) : '',
+      description: plain,
       source: 'greenhouse',
       tags,
       published_at: j.updated_at || new Date().toISOString(),
