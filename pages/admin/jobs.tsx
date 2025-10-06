@@ -95,6 +95,22 @@ export default function AdminJobsPage() {
     }
   }
 
+  async function handleDeleteSource(id: string) {
+    try {
+      const res = await fetch('/api/admin/job-sources-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.detail || json.error || 'Failed to delete')
+      fetchSources()
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e)
+    }
+  }
+
   async function runIngestion(id?: string) {
     setRunning(true)
     setSourcesMsg(null)
@@ -172,6 +188,14 @@ export default function AdminJobsPage() {
       <h1 className="text-2xl font-bold mb-4">Jobs Admin</h1>
       <div className="border rounded p-4 mb-8">
         <div className="font-medium mb-2">Job Sources</div>
+        <p className="text-xs text-gray-600 mb-3">
+          Each row is a query source. For Adzuna/JSearch, the Keywords are the search
+          terms we send to the provider. Only <span className="font-semibold">Active</span> sources
+          run when you click <span className="font-semibold">Run all now</span>. If
+          <span className="font-semibold"> Auto‑publish</span> is on, new results appear on
+          <code className="mx-1">/jobs</code> immediately. Use “Add keywords” to create new
+          queries and “Show inactive sources” to manage disabled ones.
+        </p>
         <div className="mb-3 flex gap-2">
           <button onClick={() => runIngestion()} disabled={running} className={`px-3 py-1 rounded ${running ? 'bg-gray-400' : 'bg-indigo-600 hover:bg-indigo-700'} text-white`} title="Run all active sources now">
             {running ? 'Running…' : 'Run all now'}
@@ -184,7 +208,7 @@ export default function AdminJobsPage() {
             <option value="jsearch">JSearch</option>
           </select>
           <div className="flex gap-2">
-            <input className="border rounded px-3 py-1 flex-1" placeholder="e.g. welder OR \"metal fabricator\"" value={newQuery} onChange={(e) => setNewQuery(e.target.value)} />
+            <input className="border rounded px-3 py-1 flex-1" placeholder={'e.g. welder OR "metal fabricator"'} value={newQuery} onChange={(e) => setNewQuery(e.target.value)} />
             <button onClick={handleAddQuery} className="px-3 py-1 rounded border hover:bg-gray-50">Add</button>
           </div>
         </div>
@@ -206,6 +230,9 @@ export default function AdminJobsPage() {
                 </label>
                 <button onClick={() => runIngestion(s.id)} disabled={running} className={`px-2 py-1 rounded border ${running ? 'opacity-60' : 'hover:bg-gray-50'}`} title="Run only this source now">
                   Run now
+                </button>
+                <button onClick={() => handleDeleteSource(s.id)} className="px-2 py-1 rounded border hover:bg-red-50 text-red-600 border-red-300" title="Delete source">
+                  Delete
                 </button>
               </div>
             </div>
@@ -235,6 +262,9 @@ export default function AdminJobsPage() {
                   </label>
                   <button onClick={() => runIngestion(s.id)} disabled={running} className={`px-2 py-1 rounded border ${running ? 'opacity-60' : 'hover:bg-gray-50'}`} title="Run only this source now">
                     Run now
+                  </button>
+                  <button onClick={() => handleDeleteSource(s.id)} className="px-2 py-1 rounded border hover:bg-red-50 text-red-600 border-red-300" title="Delete source">
+                    Delete
                   </button>
                 </div>
               </div>
