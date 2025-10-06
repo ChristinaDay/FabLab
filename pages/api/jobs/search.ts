@@ -10,8 +10,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const client = getServiceRoleClient()
     let query = client.from('jobs').select('*').eq('visible', true)
     if (q) {
-      // basic ilike on title/company/description
-      query = query.or(`title.ilike.%${q}%,company.ilike.%${q}%,description.ilike.%${q}%`)
+      // Support simple boolean OR syntax (e.g., "welder OR welding OR \"metal fabricator\"")
+      const tokens = Array.from(new Set(
+        q
+          .split(/\s+OR\s+/i) // split on OR
+          .flatMap((part) => part.split(/\s+/)) // also split remaining words
+          .map((t) => t.replace(/^"|"$/g, '').trim())
+          .filter(Boolean)
+      ))
+
+      if (tokens.length === 1) {
+        const t = tokens[0]
+        query = query.or(`title.ilike.%${t}%,company.ilike.%${t}%,description.ilike.%${t}%`)
+      } else if (tokens.length > 1) {
+        // Build a big OR across all tokens and fields
+        const parts: string[] = []
+        for (const t of tokens) {
+          parts.push(`title.ilike.%${t}%`)
+          parts.push(`company.ilike.%${t}%`)
+          parts.push(`description.ilike.%${t}%`)
+        }
+        query = query.or(parts.join(','))
+      }
     }
     if (loc) {
       query = query.ilike('location', `%${loc}%`)
