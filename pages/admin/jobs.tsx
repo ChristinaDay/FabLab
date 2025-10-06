@@ -20,6 +20,7 @@ export default function AdminJobsPage() {
   const [msg, setMsg] = useState<string | null>(null)
   const [sources, setSources] = useState<any[]>([])
   const [sourcesMsg, setSourcesMsg] = useState<string | null>(null)
+  const [running, setRunning] = useState(false)
 
   useEffect(() => {
     fetchJobs()
@@ -70,6 +71,25 @@ export default function AdminJobsPage() {
     }
   }
 
+  async function runIngestion(id?: string) {
+    setRunning(true)
+    setSourcesMsg(null)
+    try {
+      const res = await fetch('/api/admin/jobs-run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(id ? { id } : {}),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.detail || json.error || 'Failed')
+      setSourcesMsg(`Triggered ingestion (${json.processed} source${json.processed === 1 ? '' : 's'})`)
+    } catch (e: any) {
+      setSourcesMsg(e.message || 'Failed to trigger ingestion')
+    } finally {
+      setRunning(false)
+    }
+  }
+
   async function saveJob() {
     setMsg(null)
     try {
@@ -109,6 +129,11 @@ export default function AdminJobsPage() {
       <h1 className="text-2xl font-bold mb-4">Jobs Admin</h1>
       <div className="border rounded p-4 mb-8">
         <div className="font-medium mb-2">Job Sources</div>
+        <div className="mb-3 flex gap-2">
+          <button onClick={() => runIngestion()} disabled={running} className={`px-3 py-1 rounded ${running ? 'bg-gray-400' : 'bg-indigo-600 hover:bg-indigo-700'} text-white`} title="Run all active sources now">
+            {running ? 'Running…' : 'Run all now'}
+          </button>
+        </div>
         <div className="space-y-2">
           {sources.map((s) => (
             <div key={s.id} className="flex items-center justify-between gap-3 border rounded p-2">
@@ -117,14 +142,17 @@ export default function AdminJobsPage() {
                 <div className="text-gray-600">{s.type} • {s.org}</div>
               </div>
               <div className="flex items-center gap-3 text-sm">
-                <label className="flex items-center gap-1">
+                <label className="flex items-center gap-1" title="If enabled, newly ingested jobs from this source are immediately visible on /jobs">
                   <input type="checkbox" checked={!!s.auto_publish} onChange={(e) => updateSource(s.id, { auto_publish: e.target.checked })} />
                   Auto‑publish
                 </label>
-                <label className="flex items-center gap-1">
+                <label className="flex items-center gap-1" title="If disabled, this source is skipped by scheduled and manual runs">
                   <input type="checkbox" checked={!!s.active} onChange={(e) => updateSource(s.id, { active: e.target.checked })} />
                   Active
                 </label>
+                <button onClick={() => runIngestion(s.id)} disabled={running} className={`px-2 py-1 rounded border ${running ? 'opacity-60' : 'hover:bg-gray-50'}`} title="Run only this source now">
+                  Run now
+                </button>
               </div>
             </div>
           ))}
