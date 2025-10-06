@@ -18,9 +18,12 @@ export default function AdminJobsPage() {
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState<Job>({ title: '', company: '', location: '', link: '', description: '', source: '' })
   const [msg, setMsg] = useState<string | null>(null)
+  const [sources, setSources] = useState<any[]>([])
+  const [sourcesMsg, setSourcesMsg] = useState<string | null>(null)
 
   useEffect(() => {
     fetchJobs()
+    fetchSources()
   }, [])
 
   async function fetchJobs() {
@@ -35,6 +38,35 @@ export default function AdminJobsPage() {
       console.error(e)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function fetchSources() {
+    try {
+      const res = await fetch('/api/admin/job-sources-list')
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.detail || json.error || 'Failed to load sources')
+      setSources(json.sources || [])
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e)
+    }
+  }
+
+  async function updateSource(id: string, patch: { auto_publish?: boolean; active?: boolean }) {
+    setSourcesMsg(null)
+    try {
+      const res = await fetch('/api/admin/job-sources-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...patch }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.detail || json.error || 'Failed')
+      setSourcesMsg('Updated')
+      fetchSources()
+    } catch (e: any) {
+      setSourcesMsg(e.message || 'Failed to update source')
     }
   }
 
@@ -76,6 +108,30 @@ export default function AdminJobsPage() {
     <div className="p-6 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Jobs Admin</h1>
       <div className="border rounded p-4 mb-8">
+        <div className="font-medium mb-2">Job Sources</div>
+        <div className="space-y-2">
+          {sources.map((s) => (
+            <div key={s.id} className="flex items-center justify-between gap-3 border rounded p-2">
+              <div className="text-sm">
+                <div className="font-semibold">{s.label || `${s.type}:${s.org}`}</div>
+                <div className="text-gray-600">{s.type} • {s.org}</div>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <label className="flex items-center gap-1">
+                  <input type="checkbox" checked={!!s.auto_publish} onChange={(e) => updateSource(s.id, { auto_publish: e.target.checked })} />
+                  Auto‑publish
+                </label>
+                <label className="flex items-center gap-1">
+                  <input type="checkbox" checked={!!s.active} onChange={(e) => updateSource(s.id, { active: e.target.checked })} />
+                  Active
+                </label>
+              </div>
+            </div>
+          ))}
+        </div>
+        {sourcesMsg ? <div className="text-sm text-gray-700 mt-2">{sourcesMsg}</div> : null}
+      </div>
+      <div className="border rounded p-4 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <input className="border rounded px-3 py-2" placeholder="Job title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
           <input className="border rounded px-3 py-2" placeholder="Company" value={form.company || ''} onChange={(e) => setForm({ ...form, company: e.target.value })} />
@@ -91,7 +147,7 @@ export default function AdminJobsPage() {
       </div>
 
       {loading ? (
-        <div>Loading…</div)
+        <div>Loading…</div>
       ) : (
         <div className="space-y-4">
           {jobs.map((j) => (

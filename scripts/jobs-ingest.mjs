@@ -16,7 +16,7 @@ async function upsertJob(job) {
   if (error) throw error
 }
 
-async function fetchGreenhouse(org, label, tags) {
+async function fetchGreenhouse(org, label, tags, autoPublish) {
   // Public API: https://boards-api.greenhouse.io/v1/boards/{org}/jobs
   const url = `https://boards-api.greenhouse.io/v1/boards/${encodeURIComponent(org)}/jobs?content=true`
   const res = await fetch(url, {
@@ -41,14 +41,14 @@ async function fetchGreenhouse(org, label, tags) {
       source: 'greenhouse',
       tags,
       published_at: j.updated_at || new Date().toISOString(),
-      visible: false,
+      visible: !!autoPublish,
     })
     count++
   }
   return count
 }
 
-async function fetchLever(org, label, tags) {
+async function fetchLever(org, label, tags, autoPublish) {
   // Public API: https://api.lever.co/v0/postings/{org}?mode=json
   const url = `https://api.lever.co/v0/postings/${encodeURIComponent(org)}?mode=json`
   const res = await fetch(url, {
@@ -73,14 +73,14 @@ async function fetchLever(org, label, tags) {
       source: 'lever',
       tags,
       published_at: j.createdAt ? new Date(j.createdAt).toISOString() : new Date().toISOString(),
-      visible: false,
+      visible: !!autoPublish,
     })
     count++
   }
   return count
 }
 
-async function fetchAdzuna(query, label, tags) {
+async function fetchAdzuna(query, label, tags, autoPublish) {
   const appId = process.env.ADZUNA_APP_ID
   const appKey = process.env.ADZUNA_APP_KEY
   if (!appId || !appKey) throw new Error('Missing ADZUNA_APP_ID/ADZUNA_APP_KEY')
@@ -108,14 +108,14 @@ async function fetchAdzuna(query, label, tags) {
       source: 'adzuna',
       tags,
       published_at: j.created || new Date().toISOString(),
-      visible: false,
+      visible: !!autoPublish,
     })
     count++
   }
   return count
 }
 
-async function fetchJSearch(query, label, tags) {
+async function fetchJSearch(query, label, tags, autoPublish) {
   const rapidKey = process.env.RAPIDAPI_KEY
   const rapidHost = process.env.RAPIDAPI_HOST || 'jsearch.p.rapidapi.com'
   if (!rapidKey) throw new Error('Missing RAPIDAPI_KEY')
@@ -149,7 +149,7 @@ async function fetchJSearch(query, label, tags) {
       source: 'jsearch',
       tags,
       published_at: published ? new Date(published).toISOString() : new Date().toISOString(),
-      visible: false,
+      visible: !!autoPublish,
     })
     count++
   }
@@ -166,7 +166,7 @@ async function main() {
   // adzuna|jsearch: { type, org: query string, label?, tags? }
   const { data: sources, error } = await client
     .from('job_sources')
-    .select('type, org, label, tags')
+    .select('type, org, label, tags, auto_publish')
     .eq('active', true)
   if (error) {
     console.error('Failed to load job_sources:', error.message)
@@ -183,10 +183,11 @@ async function main() {
     const tags = s.tags || null
     try {
       let c = 0
-      if (s.type === 'greenhouse') c = await fetchGreenhouse(s.org, label, tags)
-      else if (s.type === 'lever') c = await fetchLever(s.org, label, tags)
-      else if (s.type === 'adzuna') c = await fetchAdzuna(s.org, label, tags)
-      else if (s.type === 'jsearch') c = await fetchJSearch(s.org, label, tags)
+      const auto = s.auto_publish ?? true
+      if (s.type === 'greenhouse') c = await fetchGreenhouse(s.org, label, tags, auto)
+      else if (s.type === 'lever') c = await fetchLever(s.org, label, tags, auto)
+      else if (s.type === 'adzuna') c = await fetchAdzuna(s.org, label, tags, auto)
+      else if (s.type === 'jsearch') c = await fetchJSearch(s.org, label, tags, auto)
       else {
         console.log(`Skipping unsupported source type: ${s.type}`)
         continue
