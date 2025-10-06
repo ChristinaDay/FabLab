@@ -24,6 +24,8 @@ export default function AdminJobsPage() {
   const [sourcesMsg, setSourcesMsg] = useState<string | null>(null)
   const [running, setRunning] = useState(false)
   const [showInactive, setShowInactive] = useState(false)
+  const [newType, setNewType] = useState<'adzuna'|'jsearch'>('adzuna')
+  const [newQuery, setNewQuery] = useState('')
 
   useEffect(() => {
     fetchJobs()
@@ -71,6 +73,25 @@ export default function AdminJobsPage() {
       fetchSources()
     } catch (e: any) {
       setSourcesMsg(e.message || 'Failed to update source')
+    }
+  }
+
+  async function handleAddQuery() {
+    const q = newQuery.trim()
+    if (!q) return
+    try {
+      const res = await fetch('/api/admin/job-sources-add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: newType, query: q }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.detail || json.error || 'Failed to add')
+      setNewQuery('')
+      fetchSources()
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e)
     }
   }
 
@@ -155,6 +176,17 @@ export default function AdminJobsPage() {
           <button onClick={() => runIngestion()} disabled={running} className={`px-3 py-1 rounded ${running ? 'bg-gray-400' : 'bg-indigo-600 hover:bg-indigo-700'} text-white`} title="Run all active sources now">
             {running ? 'Running…' : 'Run all now'}
           </button>
+        </div>
+        <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-2 items-center">
+          <div className="text-sm font-medium">Add keywords</div>
+          <select className="border rounded px-2 py-1" value={newType} onChange={(e) => setNewType(e.target.value as any)}>
+            <option value="adzuna">Adzuna</option>
+            <option value="jsearch">JSearch</option>
+          </select>
+          <div className="flex gap-2">
+            <input className="border rounded px-3 py-1 flex-1" placeholder="e.g. welder OR \"metal fabricator\"" value={newQuery} onChange={(e) => setNewQuery(e.target.value)} />
+            <button onClick={handleAddQuery} className="px-3 py-1 rounded border hover:bg-gray-50">Add</button>
+          </div>
         </div>
         <div className="space-y-2">
           {sources.filter((s) => !!s.active).map((s) => (
