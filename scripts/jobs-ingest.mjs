@@ -152,7 +152,7 @@ async function fetchJSearch(query, label, tags, autoPublish, opts = {}) {
       const title = j.job_title || 'Untitled'
       const company = j.employer_name || label || 'JSearch'
       const location = j.job_city || j.job_location || ''
-      const description = jsearchSnippet(j)
+      const description = (j.job_description && j.job_description.replace(/\s+/g, ' ').trim().slice(0,2000)) || jsearchSnippet(j)
       const published = j.job_posted_at_datetime_utc || j.job_posted_at_timestamp || null
       const text = `${title} ${company} ${location} ${description}`
       if (!withinMaxAge(published, maxAge)) continue
