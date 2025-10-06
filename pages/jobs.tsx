@@ -7,6 +7,7 @@ export default function Jobs({ jobs }: { jobs: any[] }) {
   const [loc, setLoc] = useState('')
   const [loading, setLoading] = useState(false)
   const [activeCat, setActiveCat] = useState<string>('all')
+  const [strict, setStrict] = useState(false)
 
   const categories = [
     { key: 'all', label: 'All', query: '' },
@@ -27,6 +28,7 @@ export default function Jobs({ jobs }: { jobs: any[] }) {
       const params = new URLSearchParams()
       if (q.trim()) params.set('q', q.trim())
       if (loc.trim()) params.set('loc', loc.trim())
+      if (strict) params.set('strict', '1')
       const res = await fetch(`/api/jobs/search?${params.toString()}`)
       const json = await res.json()
       if (!res.ok) throw new Error(json.detail || json.error || 'Search failed')
@@ -46,6 +48,7 @@ export default function Jobs({ jobs }: { jobs: any[] }) {
     const params = new URLSearchParams()
     if (query.trim()) params.set('q', query.trim())
     if (loc.trim()) params.set('loc', loc.trim())
+    if (strict) params.set('strict', '1')
     setLoading(true)
     try {
       const res = await fetch(`/api/jobs/search?${params.toString()}`)
@@ -75,9 +78,12 @@ export default function Jobs({ jobs }: { jobs: any[] }) {
           </button>
         ))}
       </div>
-      <form onSubmit={runSearch} className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-2">
+      <form onSubmit={runSearch} className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
         <input value={q} onChange={(e) => setQ(e.target.value)} className="border rounded px-3 py-2" placeholder="Keyword (e.g. welder, cnc)" />
         <input value={loc} onChange={(e) => setLoc(e.target.value)} className="border rounded px-3 py-2" placeholder="Location (e.g. Boston)" />
+        <label className="text-sm flex items-center gap-2">
+          <input type="checkbox" checked={strict} onChange={(e) => setStrict(e.target.checked)} /> Exact city match
+        </label>
         <button disabled={loading} className={`px-4 py-2 rounded text-white ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}>{loading ? 'Searching…' : 'Search'}</button>
       </form>
       {results.length === 0 ? (

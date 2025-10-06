@@ -5,7 +5,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
   try {
     const q = String(req.query.q || '').trim()
-    const loc = String(req.query.loc || '').trim()
+    const strict = String(req.query.strict || '').toLowerCase() === '1' || String(req.query.strict || '').toLowerCase() === 'true'
+    const locRaw = String(req.query.loc || '').trim()
+    const loc = normalizeLocation(locRaw)
     const limit = Math.min(100, Number(req.query.limit) || 50)
     const client = getServiceRoleClient()
     let query = client.from('jobs').select('*').eq('visible', true)
@@ -57,7 +59,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data, error } = await query
     if (error) throw error
     let rows = data || []
-    // Rank by location relevance instead of hard filtering
     if (loc) {
       const phrase = loc.toLowerCase().trim()
       const tokens = Array.from(new Set(
@@ -66,22 +67,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .map((t) => t.trim())
           .filter(Boolean)
       ))
-      rows = rows
-        .map((r: any) => {
+      if (strict && tokens.length > 0) {
+        // Strict: require phrase or ALL tokens present
+        rows = rows.filter((r: any) => {
           const hay = `${r.location || ''} ${r.description || ''}`.toLowerCase()
-          let score = 0
-          if (phrase && hay.includes(phrase)) score += 3
-          for (const t of tokens) if (hay.includes(t)) score += 1
-          return { r, score }
+          if (phrase && hay.includes(phrase)) return true
+          return tokens.every((t) => hay.includes(t))
         })
-        .sort((a: any, b: any) => b.score - a.score)
-        .map((x: any) => x.r)
+      } else {
+        // Rank by relevance
+        rows = rows
+          .map((r: any) => {
+            const hay = `${r.location || ''} ${r.description || ''}`.toLowerCase()
+            let score = 0
+            if (phrase && hay.includes(phrase)) score += 3
+            for (const t of tokens) if (hay.includes(t)) score += 1
+            return { r, score }
+          })
+          .sort((a: any, b: any) => b.score - a.score)
+          .map((x: any) => x.r)
+      }
     }
     return res.status(200).json({ jobs: rows })
   } catch (err) {
     const detail = err instanceof Error ? err.message : JSON.stringify(err)
     return res.status(500).json({ error: 'Search failed', detail })
   }
+}
+
+function normalizeLocation(s: string): string {
+  const v = s.trim().toLowerCase()
+  if (!v) return v
+  // Simple aliases
+  if (v === 'sf' || v === 's.f.' || v === 'san fran') return 'San Francisco'
+  return s
 }
 
 
