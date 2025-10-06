@@ -75,4 +75,47 @@ export async function upsertItemServer(client: SupabaseClient, item: UpsertItem)
   return data
 }
 
+// Jobs helpers
+export type UpsertJob = {
+  title: string
+  company?: string
+  location?: string
+  link: string
+  description?: string
+  source?: string
+  tags?: string[]
+  published_at?: string | Date | null
+  visible?: boolean
+}
+
+export async function upsertJobServer(client: SupabaseClient, job: UpsertJob) {
+  const { data, error } = await client
+    .from('jobs')
+    .upsert(
+      {
+        ...job,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'link' }
+    )
+    .select()
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error('supabase job upsert error (server)', error)
+    throw error
+  }
+  return data
+}
+
+export async function fetchVisibleJobs(limit = 50) {
+  const { data, error } = await supabase
+    .from('jobs')
+    .select('*')
+    .eq('visible', true)
+    .order('published_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return data
+}
+
 
