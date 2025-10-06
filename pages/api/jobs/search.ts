@@ -57,21 +57,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data, error } = await query
     if (error) throw error
     let rows = data || []
-    // Enforce ALL location tokens client-side too (AND semantics across tokens)
+    // Rank by location relevance instead of hard filtering
     if (loc) {
+      const phrase = loc.toLowerCase().trim()
       const tokens = Array.from(new Set(
-        loc
-          .toLowerCase()
+        phrase
           .split(/[,"\s]+/)
           .map((t) => t.trim())
           .filter(Boolean)
       ))
-      if (tokens.length > 0) {
-        rows = rows.filter((r: any) => {
+      rows = rows
+        .map((r: any) => {
           const hay = `${r.location || ''} ${r.description || ''}`.toLowerCase()
-          return tokens.every((t) => hay.includes(t))
+          let score = 0
+          if (phrase && hay.includes(phrase)) score += 3
+          for (const t of tokens) if (hay.includes(t)) score += 1
+          return { r, score }
         })
-      }
+        .sort((a: any, b: any) => b.score - a.score)
+        .map((x: any) => x.r)
     }
     return res.status(200).json({ jobs: rows })
   } catch (err) {
