@@ -80,12 +80,90 @@ async function fetchLever(org, label, tags) {
   return count
 }
 
+async function fetchAdzuna(query, label, tags) {
+  const appId = process.env.ADZUNA_APP_ID
+  const appKey = process.env.ADZUNA_APP_KEY
+  if (!appId || !appKey) throw new Error('Missing ADZUNA_APP_ID/ADZUNA_APP_KEY')
+  // Country: US (adjust if needed). First page, 50 results.
+  const endpoint = `https://api.adzuna.com/v1/api/jobs/us/search/1`
+  const url = `${endpoint}?app_id=${encodeURIComponent(appId)}&app_key=${encodeURIComponent(appKey)}&results_per_page=50&what=${encodeURIComponent(query)}`
+  const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' } })
+  if (!res.ok) throw new Error(`Adzuna HTTP ${res.status}`)
+  const data = await res.json()
+  const jobs = Array.isArray(data.results) ? data.results : []
+  let count = 0
+  for (const j of jobs) {
+    const link = j.redirect_url || j.apply_url || ''
+    if (!link) continue
+    const title = j.title || 'Untitled'
+    const company = j.company?.display_name || label || 'Adzuna'
+    const location = j.location?.display_name || ''
+    const description = (j.description || '').slice(0, 2000)
+    await upsertJob({
+      title,
+      company,
+      location,
+      link,
+      description,
+      source: 'adzuna',
+      tags,
+      published_at: j.created || new Date().toISOString(),
+      visible: false,
+    })
+    count++
+  }
+  return count
+}
+
+async function fetchJSearch(query, label, tags) {
+  const rapidKey = process.env.RAPIDAPI_KEY
+  const rapidHost = process.env.RAPIDAPI_HOST || 'jsearch.p.rapidapi.com'
+  if (!rapidKey) throw new Error('Missing RAPIDAPI_KEY')
+  const url = `https://${rapidHost}/search?query=${encodeURIComponent(query)}&page=1&num_pages=1`
+  const res = await fetch(url, {
+    headers: {
+      'X-RapidAPI-Key': rapidKey,
+      'X-RapidAPI-Host': rapidHost,
+      'Accept': 'application/json',
+      'User-Agent': 'Mozilla/5.0'
+    }
+  })
+  if (!res.ok) throw new Error(`JSearch HTTP ${res.status}`)
+  const data = await res.json()
+  const jobs = Array.isArray(data.data) ? data.data : []
+  let count = 0
+  for (const j of jobs) {
+    const link = j.job_apply_link || j.job_google_link || j.job_offer_expiration_datetime_utc || ''
+    if (!link) continue
+    const title = j.job_title || 'Untitled'
+    const company = j.employer_name || label || 'JSearch'
+    const location = j.job_city || j.job_location || ''
+    const description = (j.job_description || '').slice(0, 2000)
+    const published = j.job_posted_at_datetime_utc || j.job_posted_at_timestamp || null
+    await upsertJob({
+      title,
+      company,
+      location,
+      link,
+      description,
+      source: 'jsearch',
+      tags,
+      published_at: published ? new Date(published).toISOString() : new Date().toISOString(),
+      visible: false,
+    })
+    count++
+  }
+  return count
+}
+
 function stripHtml(html) {
   return String(html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
 async function main() {
-  // job_sources: { type: 'greenhouse'|'lever', org: 'acme', label?, tags?, active }
+  // job_sources rows shape by type:
+  // greenhouse|lever: { type, org, label?, tags? }
+  // adzuna|jsearch: { type, org: query string, label?, tags? }
   const { data: sources, error } = await client
     .from('job_sources')
     .select('type, org, label, tags')
@@ -107,6 +185,8 @@ async function main() {
       let c = 0
       if (s.type === 'greenhouse') c = await fetchGreenhouse(s.org, label, tags)
       else if (s.type === 'lever') c = await fetchLever(s.org, label, tags)
+      else if (s.type === 'adzuna') c = await fetchAdzuna(s.org, label, tags)
+      else if (s.type === 'jsearch') c = await fetchJSearch(s.org, label, tags)
       else {
         console.log(`Skipping unsupported source type: ${s.type}`)
         continue
