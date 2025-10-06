@@ -112,12 +112,22 @@ async function runJSearch(query: string, label?: string, tags?: string[], auto =
     const link = j.job_apply_link || j.job_google_link || ''
     if (!link) continue
     const published = j.job_posted_at_datetime_utc || j.job_posted_at_timestamp || null
+    // Build a concise snippet using highlights when available
+    const hl = (j as any).job_highlights || {}
+    const blocks: string[] = []
+    for (const key of ['Qualifications','Responsibilities','Benefits']) {
+      const arr = Array.isArray(hl[key]) ? hl[key] as string[] : []
+      if (arr.length) blocks.push(arr.slice(0,3).join(' • '))
+    }
+    const snippet = blocks.join(' | ')
+    const fallback = (j.job_description || '').replace(/\s+/g, ' ').trim()
+    const description = (snippet || fallback).slice(0, 2000)
     await upsertJob({
       title: j.job_title || 'Untitled',
       company: j.employer_name || label || 'JSearch',
       location: j.job_city || j.job_location || '',
       link,
-      description: (j.job_description || '').slice(0, 2000),
+      description,
       source: 'jsearch',
       tags,
       published_at: published ? new Date(published).toISOString() : new Date().toISOString(),
