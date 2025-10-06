@@ -56,7 +56,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     query = query.order('published_at', { ascending: false }).limit(limit)
     const { data, error } = await query
     if (error) throw error
-    return res.status(200).json({ jobs: data || [] })
+    let rows = data || []
+    // Enforce ALL location tokens client-side too (AND semantics across tokens)
+    if (loc) {
+      const tokens = Array.from(new Set(
+        loc
+          .toLowerCase()
+          .split(/[,"\s]+/)
+          .map((t) => t.trim())
+          .filter(Boolean)
+      ))
+      if (tokens.length > 0) {
+        rows = rows.filter((r: any) => {
+          const hay = `${r.location || ''} ${r.description || ''}`.toLowerCase()
+          return tokens.every((t) => hay.includes(t))
+        })
+      }
+    }
+    return res.status(200).json({ jobs: rows })
   } catch (err) {
     const detail = err instanceof Error ? err.message : JSON.stringify(err)
     return res.status(500).json({ error: 'Search failed', detail })
