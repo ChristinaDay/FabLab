@@ -18,6 +18,8 @@ export default function AdminPage() {
   const [feedUrl, setFeedUrl] = useState('')
   const [ingesting, setIngesting] = useState(false)
   const [ingestMsg, setIngestMsg] = useState<string | null>(null)
+  const [opml, setOpml] = useState('')
+  const [importMsg, setImportMsg] = useState<string | null>(null)
 
   useEffect(() => {
     fetchItems()
@@ -80,6 +82,45 @@ export default function AdminPage() {
     }
   }
 
+  function extractUrlsFromOpmlOrText(text: string): string[] {
+    const urls: string[] = []
+    // Try OPML: look for xmlUrl attributes
+    const opmlUrlRegex = /xmlUrl="([^"]+)"/g
+    let m: RegExpExecArray | null
+    while ((m = opmlUrlRegex.exec(text)) !== null) {
+      urls.push(m[1])
+    }
+    // Also parse newline-separated URLs
+    text
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter((s) => s.startsWith('http'))
+      .forEach((u) => urls.push(u))
+    // de-dup
+    return Array.from(new Set(urls))
+  }
+
+  async function handleImportFeeds() {
+    const urls = extractUrlsFromOpmlOrText(opml)
+    if (urls.length === 0) {
+      setImportMsg('No URLs found')
+      return
+    }
+    try {
+      const res = await fetch('/api/admin/feeds-bulk-add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urls }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.detail || json.error || 'Failed')
+      setImportMsg(`Imported/updated ${json.count} feeds`)
+      setOpml('')
+    } catch (e: any) {
+      setImportMsg(e.message || 'Failed to import')
+    }
+  }
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Editorial Admin</h1>
@@ -115,6 +156,24 @@ export default function AdminPage() {
           ))}
         </div>
         {ingestMsg ? <div className="text-sm text-gray-700">{ingestMsg}</div> : null}
+      </div>
+      <div className="mb-8 space-y-3">
+        <div className="text-sm font-medium">Import feeds (paste OPML or newline list of URLs)</div>
+        <textarea
+          value={opml}
+          onChange={(e) => setOpml(e.target.value)}
+          placeholder="Paste OPML XML or a list of feed URLs (one per line)"
+          className="w-full h-40 border rounded p-2 font-mono text-xs"
+        />
+        <div className="flex gap-2">
+          <button
+            onClick={handleImportFeeds}
+            className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+          >
+            Import feeds
+          </button>
+          {importMsg ? <div className="text-sm text-gray-700">{importMsg}</div> : null}
+        </div>
       </div>
       {loading ? (
         <div>Loading…</div>
