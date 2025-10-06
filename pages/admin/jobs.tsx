@@ -16,6 +16,8 @@ type Job = {
 export default function AdminJobsPage() {
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState<Record<string, boolean>>({})
+  const needsReview = jobs.filter((j) => !j.visible)
   const [form, setForm] = useState<Job>({ title: '', company: '', location: '', link: '', description: '', source: '' })
   const [msg, setMsg] = useState<string | null>(null)
   const [sources, setSources] = useState<any[]>([])
@@ -124,6 +126,25 @@ export default function AdminJobsPage() {
     }
   }
 
+  async function bulkPublish() {
+    const ids = Object.entries(selected).filter(([, v]) => v).map(([id]) => id)
+    if (ids.length === 0) return
+    try {
+      const res = await fetch('/api/admin/jobs-bulk-publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.detail || json.error || 'Failed')
+      setSelected({})
+      fetchJobs()
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e)
+    }
+  }
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Jobs Admin</h1>
@@ -177,22 +198,56 @@ export default function AdminJobsPage() {
       {loading ? (
         <div>Loading…</div>
       ) : (
-        <div className="space-y-4">
-          {jobs.map((j) => (
-            <div key={j.id} className="p-3 border rounded-lg">
-              <div className="flex justify-between items-start gap-4">
-                <div>
-                  <div className="font-semibold">{j.title}</div>
-                  <div className="text-sm text-gray-600">{j.company} {j.location ? `• ${j.location}` : ''}</div>
-                  <div className="text-sm mt-1">{j.description}</div>
-                  <a href={j.link} target="_blank" rel="noreferrer" className="text-sm underline mt-1 inline-block">Apply</a>
-                </div>
-                <button onClick={() => toggleVisible(j.id as string, !!j.visible)} className={`px-3 py-1 rounded ${j.visible ? 'bg-red-500 text-white' : 'bg-green-600 text-white'}`}>
-                  {j.visible ? 'Unpublish' : 'Publish'}
-                </button>
-              </div>
+        <div className="space-y-10">
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold">Needs review</h2>
+              <button onClick={bulkPublish} className="px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700" title="Publish selected">
+                Publish selected
+              </button>
             </div>
-          ))}
+            <div className="space-y-3">
+              {needsReview.length === 0 ? <div className="text-sm text-gray-600">No items.</div> : null}
+              {needsReview.map((j) => (
+                <div key={j.id} className="p-3 border rounded-lg">
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex items-start gap-3">
+                      <input type="checkbox" checked={!!selected[j.id as string]} onChange={(e) => setSelected({ ...selected, [j.id as string]: e.target.checked })} />
+                      <div>
+                        <div className="font-semibold">{j.title}</div>
+                        <div className="text-sm text-gray-600">{j.company} {j.location ? `• ${j.location}` : ''}</div>
+                        <div className="text-sm mt-1">{j.description}</div>
+                        <a href={j.link} target="_blank" rel="noreferrer" className="text-sm underline mt-1 inline-block">Apply</a>
+                      </div>
+                    </div>
+                    <button onClick={() => toggleVisible(j.id as string, !!j.visible)} className={`px-3 py-1 rounded ${j.visible ? 'bg-red-500 text-white' : 'bg-green-600 text-white'}`}>
+                      {j.visible ? 'Unpublish' : 'Publish'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+          <section>
+            <h2 className="font-semibold mb-3">Published</h2>
+            <div className="space-y-3">
+              {jobs.filter((j) => j.visible).map((j) => (
+                <div key={j.id} className="p-3 border rounded-lg">
+                  <div className="flex justify-between items-start gap-4">
+                    <div>
+                      <div className="font-semibold">{j.title}</div>
+                      <div className="text-sm text-gray-600">{j.company} {j.location ? `• ${j.location}` : ''}</div>
+                      <div className="text-sm mt-1">{j.description}</div>
+                      <a href={j.link} target="_blank" rel="noreferrer" className="text-sm underline mt-1 inline-block">Apply</a>
+                    </div>
+                    <button onClick={() => toggleVisible(j.id as string, !!j.visible)} className={`px-3 py-1 rounded ${j.visible ? 'bg-red-500 text-white' : 'bg-green-600 text-white'}`}>
+                      {j.visible ? 'Unpublish' : 'Publish'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       )}
     </div>
