@@ -34,7 +34,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
     if (loc) {
-      query = query.ilike('location', `%${loc}%`)
+      // Match location tokens across location and description (city/state often in either)
+      const locTokens = Array.from(new Set(
+        loc
+          .split(/[,\s]+/)
+          .map((t) => t.replace(/^"|"$/g, '').trim())
+          .filter(Boolean)
+      ))
+      if (locTokens.length === 1) {
+        const t = locTokens[0]
+        query = query.or(`location.ilike.%${t}%,description.ilike.%${t}%`)
+      } else if (locTokens.length > 1) {
+        const parts: string[] = []
+        for (const t of locTokens) {
+          parts.push(`location.ilike.%${t}%`)
+          parts.push(`description.ilike.%${t}%`)
+        }
+        query = query.or(parts.join(','))
+      }
     }
     query = query.order('published_at', { ascending: false }).limit(limit)
     const { data, error } = await query
