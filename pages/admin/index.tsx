@@ -102,8 +102,8 @@ export default function AdminPage() {
         <div className="flex flex-wrap gap-2 text-sm">
           {[
             { label: 'Make:', url: 'https://makezine.com/feed/' },
-            { label: 'Core77', url: 'https://www.core77.com/feeds/rss' },
-            { label: 'The Fabricator', url: 'https://www.thefabricator.com/rss/all' },
+            { label: 'Core77', url: 'https://www.core77.com/feed' },
+            { label: 'The Fabricator (via Google News)', url: 'https://news.google.com/rss/search?q=site:thefabricator.com&hl=en-US&gl=US&ceid=US:en' },
           ].map((f) => (
             <button
               key={f.url}

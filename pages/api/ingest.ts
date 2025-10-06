@@ -15,7 +15,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!feedUrl) return res.status(400).json({ error: 'Missing feedUrl in body' })
 
   try {
-    const feed = await parser.parseURL(feedUrl)
+    // Some sites block default fetchers; fetch with a browser-like UA then parse the XML
+    const resp = await fetch(feedUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'application/rss+xml, application/xml;q=0.9, */*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://www.thefabricator.com/'
+      },
+    })
+    if (!resp.ok) {
+      return res.status(500).json({ error: 'Failed to ingest feed', detail: `HTTP ${resp.status}` })
+    }
+    const xml = await resp.text()
+    const feed = await parser.parseString(xml)
     const items = feed.items ?? []
     let count = 0
     const client = getServiceRoleClient()
