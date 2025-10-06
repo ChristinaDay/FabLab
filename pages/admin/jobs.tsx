@@ -23,6 +23,7 @@ export default function AdminJobsPage() {
   const [sources, setSources] = useState<any[]>([])
   const [sourcesMsg, setSourcesMsg] = useState<string | null>(null)
   const [running, setRunning] = useState(false)
+  const [showInactive, setShowInactive] = useState(false)
 
   useEffect(() => {
     fetchJobs()
@@ -156,7 +157,7 @@ export default function AdminJobsPage() {
           </button>
         </div>
         <div className="space-y-2">
-          {sources.map((s) => (
+          {sources.filter((s) => !!s.active).map((s) => (
             <div key={s.id} className="flex items-center justify-between gap-3 border rounded p-2">
               <div className="text-sm">
                 <div className="font-semibold">{s.label || `${s.type}:${s.org}`}</div>
@@ -178,6 +179,36 @@ export default function AdminJobsPage() {
             </div>
           ))}
         </div>
+        <div className="mt-3">
+          <button className="text-sm underline" onClick={() => setShowInactive(!showInactive)}>
+            {showInactive ? 'Hide' : 'Show'} inactive sources
+          </button>
+        </div>
+        {showInactive ? (
+          <div className="mt-2 space-y-2">
+            {sources.filter((s) => !s.active).map((s) => (
+              <div key={s.id} className="flex items-center justify-between gap-3 border rounded p-2 opacity-70">
+                <div className="text-sm">
+                  <div className="font-semibold">{s.label || `${s.type}:${s.org}`}</div>
+                  <div className="text-gray-600">{s.type} • {s.org}</div>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <label className="flex items-center gap-1" title="If enabled, newly ingested jobs from this source are immediately visible on /jobs">
+                    <input type="checkbox" checked={!!s.auto_publish} onChange={(e) => updateSource(s.id, { auto_publish: e.target.checked })} />
+                    Auto‑publish
+                  </label>
+                  <label className="flex items-center gap-1" title="If disabled, this source is skipped by scheduled and manual runs">
+                    <input type="checkbox" checked={!!s.active} onChange={(e) => updateSource(s.id, { active: e.target.checked })} />
+                    Active
+                  </label>
+                  <button onClick={() => runIngestion(s.id)} disabled={running} className={`px-2 py-1 rounded border ${running ? 'opacity-60' : 'hover:bg-gray-50'}`} title="Run only this source now">
+                    Run now
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
         {sourcesMsg ? <div className="text-sm text-gray-700 mt-2">{sourcesMsg}</div> : null}
       </div>
       <div className="border rounded p-4 mb-8">

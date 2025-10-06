@@ -34,13 +34,14 @@ async function fetchGreenhouse(org, label, tags, autoPublish) {
     if (!link) continue
     const raw = (j.content || '')
     const decoded = decodeHtml(raw)
-    const plain = stripHtml(decoded).slice(0, 2000)
+    const plain = stripHtml(decoded)
+    const snippet = greenhouseSnippet(plain, j.title)
     await upsertJob({
       title: j.title || 'Untitled',
       company: label || org,
       location: (j.location && j.location.name) || '',
       link,
-      description: plain,
+      description: snippet,
       source: 'greenhouse',
       tags,
       published_at: j.updated_at || new Date().toISOString(),
@@ -188,6 +189,30 @@ function decodeHtml(text) {
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
+}
+
+function greenhouseSnippet(plain, title) {
+  const maxLen = 2000
+  if (!plain) return ''
+  const boilerplate = [
+    'to reinvent an industry, you have to build the best team',
+    'join formlabs',
+    'our printers are used by',
+  ]
+  const sentences = plain
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+
+  // Prefer a sentence that is not boilerplate and mentions the role or responsibilities
+  const lowerTitle = String(title || '').toLowerCase()
+  const pick =
+    sentences.find((s) => s.toLowerCase().includes('responsibil') || s.toLowerCase().startsWith('as a')) ||
+    sentences.find((s) => lowerTitle && s.toLowerCase().includes(lowerTitle.split(' ')[0])) ||
+    sentences.find((s) => !boilerplate.some((b) => s.toLowerCase().includes(b))) ||
+    sentences[0]
+
+  return (pick || plain).slice(0, maxLen)
 }
 
 function withinMaxAge(iso, maxDays) {
