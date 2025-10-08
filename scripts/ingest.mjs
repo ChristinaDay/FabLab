@@ -19,8 +19,10 @@ async function upsertItem(item) {
 }
 
 async function ingest(feedUrl) {
+  // Map Facebook page URLs to RSSHub feeds
+  const mapped = mapFacebookUrlToRss(feedUrl) || feedUrl
   // Try to fetch URL and auto-discover feed if needed
-  const resp = await fetch(feedUrl, {
+  const resp = await fetch(mapped, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
       'Accept': 'application/rss+xml, application/xml;q=0.9, */*;q=0.8',
@@ -31,7 +33,7 @@ async function ingest(feedUrl) {
   let body = await resp.text()
   const contentType = (resp.headers.get('content-type') || '').toLowerCase()
   const looksLikeXml = contentType.includes('xml') || /^<\?xml|<rss|<feed/i.test(body)
-  let targetUrl = feedUrl
+  let targetUrl = mapped
   if (!looksLikeXml) {
     const discovered = discoverFeedUrlFromHtml(body, feedUrl)
     if (discovered) {
@@ -135,6 +137,28 @@ function discoverFeedUrlFromHtml(html, baseUrl) {
 
 function sanitizeXml(xml) {
   return xml.replace(/&(?!#\d+;|#x[0-9a-fA-F]+;|[a-zA-Z]+;)/g, '&amp;')
+}
+
+function mapFacebookUrlToRss(inputUrl) {
+  if (!inputUrl) return null
+  try {
+    const url = new URL(inputUrl)
+    const host = url.hostname.replace(/^www\./, '')
+    if (!/^(m\.)?facebook\.com$|^facebook\.com$/.test(host) && !host.endsWith('facebook.com')) {
+      return null
+    }
+    const segments = url.pathname.split('/').filter(Boolean)
+    if (segments.length === 0) return null
+    if (segments[0].toLowerCase() === 'pages' && segments.length >= 2) {
+      const candidateId = segments[2] || segments[1]
+      return candidateId ? `https://rsshub.app/facebook/page/${candidateId}` : null
+    }
+    const pageName = segments[0]
+    if (!pageName || pageName.toLowerCase() === 'profile.php') return null
+    return `https://rsshub.app/facebook/page/${pageName}`
+  } catch {
+    return null
+  }
 }
 
 async function main() {

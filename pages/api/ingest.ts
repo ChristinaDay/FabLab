@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Some sites block default fetchers; fetch with a browser-like UA
-    let targetUrl = feedUrl
+    let targetUrl = mapFacebookUrlToRss(feedUrl) || feedUrl
     let resp = await fetch(feedUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -227,6 +227,32 @@ function sanitizeXml(xml: string): string {
   // Replace ampersands not part of entities with &amp;
   // This avoids "Invalid character in entity name" when feeds include raw '&' in text/URLs
   return xml.replace(/&(?!#\d+;|#x[0-9a-fA-F]+;|[a-zA-Z]+;)/g, '&amp;')
+}
+
+function mapFacebookUrlToRss(inputUrl?: string): string | null {
+  if (!inputUrl) return null
+  try {
+    const url = new URL(inputUrl)
+    const host = url.hostname.replace(/^www\./, '')
+    if (!/^(m\.)?facebook\.com$|^facebook\.com$/.test(host) && !host.endsWith('facebook.com')) {
+      return null
+    }
+    // Path patterns:
+    // /<pageName>/...
+    // /pages/<PageName>/<numericId>
+    const segments = url.pathname.split('/').filter(Boolean)
+    if (segments.length === 0) return null
+    if (segments[0].toLowerCase() === 'pages' && segments.length >= 2) {
+      // Prefer numeric ID if present; otherwise use the PageName segment
+      const candidateId = segments[2] || segments[1]
+      return candidateId ? `https://rsshub.app/facebook/page/${candidateId}` : null
+    }
+    const pageName = segments[0]
+    if (!pageName || pageName.toLowerCase() === 'profile.php') return null
+    return `https://rsshub.app/facebook/page/${pageName}`
+  } catch {
+    return null
+  }
 }
 
 
