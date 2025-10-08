@@ -38,7 +38,7 @@ async function ingest(feedUrl) {
       targetUrl = discovered
     }
   }
-  const feed = targetUrl === feedUrl ? await parser.parseString(body) : await parser.parseURL(targetUrl)
+  const feed = targetUrl === feedUrl ? await parser.parseString(sanitizeXml(body)) : await parser.parseURL(targetUrl)
   let count = 0
   for (const it of (feed.items || []).slice(0, 20)) {
     const publishedAt = it.pubDate ? new Date(it.pubDate).toISOString() : new Date().toISOString()
@@ -131,6 +131,10 @@ function discoverFeedUrlFromHtml(html, baseUrl) {
     }
   } catch {}
   return null
+}
+
+function sanitizeXml(xml) {
+  return xml.replace(/&(?!#\d+;|#x[0-9a-fA-F]+;|[a-zA-Z]+;)/g, '&amp;')
 }
 
 async function main() {

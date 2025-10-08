@@ -53,7 +53,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    const feed = await parser.parseString(bodyText)
+    // Sanitize common malformed XML issues (e.g., stray '&' in URLs/text)
+    const sanitized = sanitizeXml(bodyText)
+    let feed
+    try {
+      feed = await parser.parseString(sanitized)
+    } catch (e) {
+      // As a fallback, try parsing the original body in case sanitization altered valid content
+      feed = await parser.parseString(bodyText)
+    }
     const items = feed.items ?? []
     let count = 0
     const client = getServiceRoleClient()
@@ -213,6 +221,12 @@ function discoverFeedUrlFromHtml(html: string, baseUrl: string): string | null {
     // ignore
   }
   return null
+}
+
+function sanitizeXml(xml: string): string {
+  // Replace ampersands not part of entities with &amp;
+  // This avoids "Invalid character in entity name" when feeds include raw '&' in text/URLs
+  return xml.replace(/&(?!#\d+;|#x[0-9a-fA-F]+;|[a-zA-Z]+;)/g, '&amp;')
 }
 
 
