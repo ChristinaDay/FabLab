@@ -1,9 +1,12 @@
 import React from 'react'
+import Nav from '@/components/Nav'
 import { fetchVisibleItems } from '@/lib/db'
 
 export default function Home({ items }: { items: any[] }) {
   return (
-    <main className="max-w-4xl mx-auto p-6">
+    <>
+      <Nav />
+      <main className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Street-Level Aggregator</h1>
       {items.length === 0 ? (
         <div className="text-gray-600">
@@ -24,7 +27,8 @@ export default function Home({ items }: { items: any[] }) {
           ))}
         </div>
       )}
-    </main>
+      </main>
+    </>
   )
 }
 

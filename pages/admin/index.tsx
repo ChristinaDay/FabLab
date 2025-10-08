@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '@/lib/db'
+import Nav from '@/components/Nav'
 
 type Item = {
   id: string
@@ -123,6 +124,7 @@ export default function AdminPage() {
 
   return (
     <div className="p-6">
+      <Nav />
       <h1 className="text-2xl font-bold mb-4">Editorial Admin</h1>
       <div className="mb-6 space-y-3">
         <div className="flex gap-2">
