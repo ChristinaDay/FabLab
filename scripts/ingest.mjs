@@ -21,19 +21,33 @@ async function upsertItem(item) {
 async function ingest(feedUrl) {
   // Map Facebook page URLs to RSSHub feeds
   const mapped = mapFacebookUrlToRss(feedUrl) || feedUrl
+  const candidates = buildRsshubCandidates(mapped)
   // Try to fetch URL and auto-discover feed if needed
-  const resp = await fetch(mapped, {
+  let resp = await fetch(candidates[0], {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
       'Accept': 'application/rss+xml, application/xml;q=0.9, */*;q=0.8',
       'Accept-Language': 'en-US,en;q=0.9',
     },
   })
-  if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+  let chosen = candidates[0]
+  if (!resp.ok) {
+    for (const c of candidates.slice(1)) {
+      const r = await fetch(c, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Accept': 'application/rss+xml, application/xml;q=0.9, */*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9',
+        },
+      })
+      if (r.ok) { resp = r; chosen = c; break }
+    }
+  }
+  if (!resp.ok) throw new Error(`HTTP ${resp.status} at ${candidates[candidates.length - 1]}`)
   let body = await resp.text()
   const contentType = (resp.headers.get('content-type') || '').toLowerCase()
   const looksLikeXml = contentType.includes('xml') || /^<\?xml|<rss|<feed/i.test(body)
-  let targetUrl = mapped
+  let targetUrl = chosen
   if (!looksLikeXml) {
     const discovered = discoverFeedUrlFromHtml(body, feedUrl)
     if (discovered) {
@@ -159,6 +173,32 @@ function mapFacebookUrlToRss(inputUrl) {
     return `${base}/facebook/page/${pageName}`
   } catch {
     return null
+  }
+}
+
+function getRsshubBases() {
+  const multi = (process.env.RSSHUB_BASES || '').split(',').map(s => s.trim()).filter(Boolean)
+  const single = process.env.RSSHUB_BASE ? [process.env.RSSHUB_BASE.trim()] : []
+  const defaults = ['https://rsshub.app']
+  const all = [...multi, ...single, ...defaults]
+  const seen = new Set()
+  const cleaned = []
+  for (const b of all) {
+    const base = b.replace(/\/$/, '')
+    if (!seen.has(base)) { seen.add(base); cleaned.push(base) }
+  }
+  return cleaned
+}
+
+function buildRsshubCandidates(urlStr) {
+  try {
+    const url = new URL(urlStr)
+    if (!/rsshub/i.test(url.hostname)) return [urlStr]
+    const bases = getRsshubBases()
+    const pathAndQuery = url.pathname + (url.search || '')
+    return bases.map(b => `${b}${pathAndQuery}`)
+  } catch {
+    return [urlStr]
   }
 }
 
