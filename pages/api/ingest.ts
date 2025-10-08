@@ -18,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // Some sites block default fetchers; fetch with a browser-like UA
     let targetUrl = mapFacebookUrlToRss(feedUrl) || feedUrl
-    let resp = await fetch(feedUrl, {
+    let resp = await fetch(targetUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Accept': 'application/rss+xml, application/xml;q=0.9, */*;q=0.8',
@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     })
     if (!resp.ok) {
-      return res.status(500).json({ error: 'Failed to ingest feed', detail: `HTTP ${resp.status}` })
+      return res.status(500).json({ error: 'Failed to fetch feed', detail: `HTTP ${resp.status} at ${targetUrl}` })
     }
     let bodyText = await resp.text()
 
@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           },
         })
         if (!resp.ok) {
-          return res.status(500).json({ error: 'Failed to fetch discovered feed', detail: `HTTP ${resp.status}` })
+          return res.status(500).json({ error: 'Failed to fetch discovered feed', detail: `HTTP ${resp.status} at ${discovered}` })
         }
         bodyText = await resp.text()
       }
@@ -237,19 +237,16 @@ function mapFacebookUrlToRss(inputUrl?: string): string | null {
     if (!/^(m\.)?facebook\.com$|^facebook\.com$/.test(host) && !host.endsWith('facebook.com')) {
       return null
     }
-    // Path patterns:
-    // /<pageName>/...
-    // /pages/<PageName>/<numericId>
+    const base = process.env.RSSHUB_BASE || 'https://rsshub.app'
     const segments = url.pathname.split('/').filter(Boolean)
     if (segments.length === 0) return null
     if (segments[0].toLowerCase() === 'pages' && segments.length >= 2) {
-      // Prefer numeric ID if present; otherwise use the PageName segment
       const candidateId = segments[2] || segments[1]
-      return candidateId ? `https://rsshub.app/facebook/page/${candidateId}` : null
+      return candidateId ? `${base}/facebook/page/${candidateId}` : null
     }
     const pageName = segments[0]
     if (!pageName || pageName.toLowerCase() === 'profile.php') return null
-    return `https://rsshub.app/facebook/page/${pageName}`
+    return `${base}/facebook/page/${pageName}`
   } catch {
     return null
   }

@@ -147,15 +147,16 @@ function mapFacebookUrlToRss(inputUrl) {
     if (!/^(m\.)?facebook\.com$|^facebook\.com$/.test(host) && !host.endsWith('facebook.com')) {
       return null
     }
+    const base = process.env.RSSHUB_BASE || 'https://rsshub.app'
     const segments = url.pathname.split('/').filter(Boolean)
     if (segments.length === 0) return null
     if (segments[0].toLowerCase() === 'pages' && segments.length >= 2) {
       const candidateId = segments[2] || segments[1]
-      return candidateId ? `https://rsshub.app/facebook/page/${candidateId}` : null
+      return candidateId ? `${base}/facebook/page/${candidateId}` : null
     }
     const pageName = segments[0]
     if (!pageName || pageName.toLowerCase() === 'profile.php') return null
-    return `https://rsshub.app/facebook/page/${pageName}`
+    return `${base}/facebook/page/${pageName}`
   } catch {
     return null
   }
