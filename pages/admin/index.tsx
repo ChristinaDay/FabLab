@@ -135,8 +135,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="p-6">
+    <>
       <Nav />
+      <div className="px-6">
       <h1 className="text-2xl font-bold mb-4">Editorial Admin</h1>
       <div className="mb-6 space-y-3">
         <div className="flex gap-2">
@@ -221,7 +222,8 @@ export default function AdminPage() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }
 
