@@ -16,8 +16,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!feedUrl) return res.status(400).json({ error: 'Missing feedUrl in body' })
 
   try {
-    // Some sites block default fetchers; fetch with a browser-like UA then parse the XML
-    const resp = await fetch(feedUrl, {
+    // Some sites block default fetchers; fetch with a browser-like UA
+    let targetUrl = feedUrl
+    let resp = await fetch(feedUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Accept': 'application/rss+xml, application/xml;q=0.9, */*;q=0.8',
@@ -28,8 +29,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!resp.ok) {
       return res.status(500).json({ error: 'Failed to ingest feed', detail: `HTTP ${resp.status}` })
     }
-    const xml = await resp.text()
-    const feed = await parser.parseString(xml)
+    let bodyText = await resp.text()
+
+    // Auto-discovery: If not XML-like, parse HTML <link rel="alternate" type="application/rss+xml|application/atom+xml">
+    const contentType = (resp.headers.get('content-type') || '').toLowerCase()
+    const looksLikeXml = contentType.includes('xml') || /^<\?xml|<rss|<feed/i.test(bodyText)
+    if (!looksLikeXml) {
+      const discovered = discoverFeedUrlFromHtml(bodyText, feedUrl)
+      if (discovered) {
+        targetUrl = discovered
+        resp = await fetch(discovered, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Accept': 'application/rss+xml, application/xml;q=0.9, */*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Referer': feedUrl,
+          },
+        })
+        if (!resp.ok) {
+          return res.status(500).json({ error: 'Failed to fetch discovered feed', detail: `HTTP ${resp.status}` })
+        }
+        bodyText = await resp.text()
+      }
+    }
+
+    // Sanitize common malformed XML issues (e.g., stray '&' in URLs/text)
+    const sanitized = sanitizeXml(bodyText)
+    let feed
+    try {
+      feed = await parser.parseString(sanitized)
+    } catch (e) {
+      // As a fallback, try parsing the original body in case sanitization altered valid content
+      feed = await parser.parseString(bodyText)
+    }
     const items = feed.items ?? []
     let count = 0
     const client = getServiceRoleClient()
@@ -168,6 +200,33 @@ function normalizeSourceName(name?: string): string {
   if (/google news/i.test(name)) return 'Google News'
   // Basic cleanup for The Fabricator
   return name.replace(/\s+\|\s*Google News.*/i, '').trim()
+}
+
+function discoverFeedUrlFromHtml(html: string, baseUrl: string): string | null {
+  try {
+    // Look for <link rel="alternate" type="application/rss+xml|application/atom+xml" href="...">
+    const linkRegex = /<link[^>]+rel=["']alternate["'][^>]*>/gi
+    const typeRegex = /type=["'](application\/(rss\+xml|atom\+xml|xml))["']/i
+    const hrefRegex = /href=["']([^"']+)["']/i
+    const matches = html.match(linkRegex) || []
+    for (const tag of matches) {
+      if (!typeRegex.test(tag)) continue
+      const hrefMatch = tag.match(hrefRegex)
+      if (!hrefMatch) continue
+      const candidate = hrefMatch[1]
+      const abs = toAbsoluteUrl(candidate, baseUrl)
+      if (abs) return abs
+    }
+  } catch {
+    // ignore
+  }
+  return null
+}
+
+function sanitizeXml(xml: string): string {
+  // Replace ampersands not part of entities with &amp;
+  // This avoids "Invalid character in entity name" when feeds include raw '&' in text/URLs
+  return xml.replace(/&(?!#\d+;|#x[0-9a-fA-F]+;|[a-zA-Z]+;)/g, '&amp;')
 }
 
 

@@ -19,7 +19,26 @@ async function upsertItem(item) {
 }
 
 async function ingest(feedUrl) {
-  const feed = await parser.parseURL(feedUrl)
+  // Try to fetch URL and auto-discover feed if needed
+  const resp = await fetch(feedUrl, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Accept': 'application/rss+xml, application/xml;q=0.9, */*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+    },
+  })
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+  let body = await resp.text()
+  const contentType = (resp.headers.get('content-type') || '').toLowerCase()
+  const looksLikeXml = contentType.includes('xml') || /^<\?xml|<rss|<feed/i.test(body)
+  let targetUrl = feedUrl
+  if (!looksLikeXml) {
+    const discovered = discoverFeedUrlFromHtml(body, feedUrl)
+    if (discovered) {
+      targetUrl = discovered
+    }
+  }
+  const feed = targetUrl === feedUrl ? await parser.parseString(sanitizeXml(body)) : await parser.parseURL(targetUrl)
   let count = 0
   for (const it of (feed.items || []).slice(0, 20)) {
     const publishedAt = it.pubDate ? new Date(it.pubDate).toISOString() : new Date().toISOString()
@@ -94,6 +113,28 @@ function sanitizeExcerpt(text) {
   if (!text) return ''
   const withoutTags = text.replace(/<[^>]+>/g, ' ')
   return withoutTags.replace(/\s+/g, ' ').trim()
+}
+
+function discoverFeedUrlFromHtml(html, baseUrl) {
+  try {
+    const linkRegex = /<link[^>]+rel=["']alternate["'][^>]*>/gi
+    const typeRegex = /type=["'](application\/(rss\+xml|atom\+xml|xml))["']/i
+    const hrefRegex = /href=["']([^"']+)["']/i
+    const matches = html.match(linkRegex) || []
+    for (const tag of matches) {
+      if (!typeRegex.test(tag)) continue
+      const hrefMatch = tag.match(hrefRegex)
+      if (!hrefMatch) continue
+      const candidate = hrefMatch[1]
+      const abs = toAbsoluteUrl(candidate, baseUrl)
+      if (abs) return abs
+    }
+  } catch {}
+  return null
+}
+
+function sanitizeXml(xml) {
+  return xml.replace(/&(?!#\d+;|#x[0-9a-fA-F]+;|[a-zA-Z]+;)/g, '&amp;')
 }
 
 async function main() {
