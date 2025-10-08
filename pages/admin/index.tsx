@@ -122,6 +122,18 @@ export default function AdminPage() {
     }
   }
 
+  async function backfillThumbnails() {
+    try {
+      const res = await fetch('/api/admin/backfill-thumbnails', { method: 'POST' })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.detail || json.error || 'Failed')
+      setImportMsg(`Backfilled ${json.updated} thumbnails (checked ${json.checked})`)
+      fetchItems()
+    } catch (e: any) {
+      setImportMsg(e.message || 'Failed to backfill')
+    }
+  }
+
   return (
     <div className="p-6">
       <Nav />
@@ -146,7 +158,7 @@ export default function AdminPage() {
           {[
             { label: 'Make:', url: 'https://makezine.com/feed/' },
             { label: 'Core77', url: 'https://www.core77.com/feed' },
-            { label: 'The Fabricator (via Google News)', url: 'https://news.google.com/rss/search?q=site:thefabricator.com&hl=en-US&gl=US&ceid=US:en' },
+            { label: 'The Fabricator', url: 'https://www.thefabricator.com/metal_fabricating_news.rss' },
           ].map((f) => (
             <button
               key={f.url}
@@ -173,6 +185,12 @@ export default function AdminPage() {
             className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700"
           >
             Import feeds
+          </button>
+          <button
+            onClick={backfillThumbnails}
+            className="px-3 py-1 rounded border hover:bg-gray-50"
+          >
+            Backfill thumbnails
           </button>
           {importMsg ? <div className="text-sm text-gray-700">{importMsg}</div> : null}
         </div>

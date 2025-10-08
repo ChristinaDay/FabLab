@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import Parser from 'rss-parser'
 import { getServiceRoleClient, upsertItemServer } from '@/lib/db'
+import { extractOpenGraphImage } from '@/lib/extractOg'
 
 type Body = { feedUrl?: string }
 
@@ -21,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Accept': 'application/rss+xml, application/xml;q=0.9, */*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.9',
-        'Referer': 'https://www.thefabricator.com/'
+        'Referer': 'https://news.google.com/'
       },
     })
     if (!resp.ok) {
@@ -34,15 +35,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const client = getServiceRoleClient()
     for (const item of items.slice(0, 20)) {
       const publishedAt = item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString()
-      const thumbnail =
-        (item.enclosure && (item.enclosure as any).url) ||
-        ((item as any)['media:thumbnail'] && ((item as any)['media:thumbnail'] as any).url) ||
-        null
+      // Prefer images provided in RSS first
+      let thumbnail = await extractImageFromRssItem(item, feedUrl)
+      // Resolve Google News redirect links to original article when present
+      const resolvedLink = await resolvePossiblyRedirectedLink(item.link || '')
+      // Fallback: try to extract Open Graph image from the article page
+      if (!thumbnail && resolvedLink) {
+        try {
+          const og = await extractOpenGraphImage(resolvedLink)
+          if (og) thumbnail = og
+        } catch {
+          // ignore page fetch errors
+        }
+      }
       await upsertItemServer(client, {
         title: item.title || 'Untitled',
-        link: item.link || '',
-        excerpt: (item as any).contentSnippet || (item as any).content || '',
-        source: feed.title || feedUrl,
+        link: resolvedLink || item.link || '',
+        excerpt: sanitizeExcerpt((item as any).contentSnippet || (item as any).content || ''),
+        source: normalizeSourceName(feed.title || feedUrl),
         thumbnail,
         published_at: publishedAt,
       })
@@ -55,6 +65,109 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const detail = err instanceof Error ? err.message : JSON.stringify(err)
     return res.status(500).json({ error: 'Failed to ingest feed', detail })
   }
+}
+
+function toAbsoluteUrl(candidate?: string | null, base?: string): string | null {
+  try {
+    if (!candidate) return null
+    if (candidate.startsWith('//')) return `https:${candidate}`
+    const abs = new URL(candidate, base || 'https://')
+    return abs.href
+  } catch {
+    return candidate || null
+  }
+}
+
+async function extractImageFromRssItem(item: any, baseUrl: string): Promise<string | null> {
+  // enclosure (type image/* preferred)
+  const enc = item.enclosure as any
+  if (enc && (enc.type ? /^image\//i.test(enc.type) : true) && enc.url) {
+    const abs = toAbsoluteUrl(enc.url, baseUrl)
+    if (abs) return abs
+  }
+
+  // media:content (choose largest if multiple)
+  const mediaContent: any = (item as any)['media:content']
+  if (mediaContent) {
+    const arr = Array.isArray(mediaContent) ? mediaContent : [mediaContent]
+    const withSizes = arr.map((m) => ({
+      url: m?.url,
+      width: Number(m?.width || 0),
+      height: Number(m?.height || 0),
+    }))
+    withSizes.sort((a, b) => (b.width * b.height) - (a.width * a.height))
+    for (const m of withSizes) {
+      const abs = toAbsoluteUrl(m.url, baseUrl)
+      if (abs) return abs
+    }
+  }
+
+  // media:thumbnail
+  const mediaThumb: any = (item as any)['media:thumbnail']
+  if (mediaThumb) {
+    const thumb = Array.isArray(mediaThumb) ? mediaThumb[0] : mediaThumb
+    const abs = toAbsoluteUrl(thumb?.url, baseUrl)
+    if (abs) return abs
+  }
+
+  // itunes:image (href)
+  const itunesImg: any = (item as any)['itunes:image']
+  if (itunesImg && itunesImg.href) {
+    const abs = toAbsoluteUrl(itunesImg.href, baseUrl)
+    if (abs) return abs
+  }
+
+  // content or content:encoded first <img>
+  const contentHtml: string = (item as any)["content:encoded"] || (item as any).content || (item as any).description || ''
+  if (contentHtml) {
+    const m = contentHtml.match(/<img[^>]+src=["']([^"']+)["']/i)
+    if (m && m[1]) {
+      const abs = toAbsoluteUrl(m[1], baseUrl)
+      if (abs) return abs
+    }
+  }
+
+  // image field
+  if ((item as any).image && (item as any).image.url) {
+    const abs = toAbsoluteUrl((item as any).image.url, baseUrl)
+    if (abs) return abs
+  }
+
+  return null
+}
+
+// Google News and other aggregators often wrap the final URL. Try to resolve redirects.
+async function resolvePossiblyRedirectedLink(link?: string): Promise<string | null> {
+  if (!link) return null
+  try {
+    // If it's already a Fabricator link, return as-is
+    const url = new URL(link)
+    if (url.hostname.includes('thefabricator.com')) return url.href
+    // For Google News URLs, sometimes the article URL is in "url" param
+    const paramUrl = url.searchParams.get('url') || url.searchParams.get('u')
+    if (paramUrl) return paramUrl
+    // As a last resort, do a HEAD request to follow redirects
+    const resp = await fetch(link, { method: 'HEAD', redirect: 'follow' as RequestRedirect })
+    const finalUrl = resp.url || link
+    return finalUrl
+  } catch {
+    return link || null
+  }
+}
+
+function sanitizeExcerpt(text: string): string {
+  if (!text) return ''
+  // Remove excessive whitespace and html tags remnants
+  const withoutTags = text.replace(/<[^>]+>/g, ' ')
+  return withoutTags.replace(/\s+/g, ' ').trim()
+}
+
+function normalizeSourceName(name?: string): string {
+  if (!name) return ''
+  // Normalize Google News sourced feeds to the underlying publication
+  if (/google news/i.test(name)) return 'Google News'
+  // Basic cleanup for The Fabricator
+  return name.replace(/\s+\|\s*Google News.*/i, '').trim()
 }
 
 
