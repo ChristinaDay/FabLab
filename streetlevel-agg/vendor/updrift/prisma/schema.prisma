@@ -1,0 +1,168 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String?   // For email/password auth
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // User preferences
+  location           String?
+  preferredRemote    Boolean   @default(false)
+  preferredSalaryMin Int?
+  preferredSalaryMax Int?
+  skills             String?   // JSON string of skills array
+  experienceLevel    String?
+  jobAlerts          Boolean   @default(true)
+  emailNotifications Boolean   @default(true)
+  excludedJobCategories String? // JSON string of excluded job categories/keywords
+
+  // Relations
+  accounts    Account[]
+  sessions    Session[]
+  savedJobs   SavedJob[]
+  applications JobApplication[]
+  searchResults SearchResult[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// UpFetch specific models
+model SavedJob {
+  id      String   @id @default(cuid())
+  userId  String
+  jobId   String   // Job ID from the API
+  jobData String   // JSON string of job data
+  notes   String?
+  savedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
+}
+
+model JobApplication {
+  id             String            @id @default(cuid())
+  userId         String
+  jobId          String            // Job ID from the API
+  jobData        String            // JSON string of job data
+  status         ApplicationStatus @default(VIEWED)
+  appliedAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  applicationUrl String?
+  notes          String?
+  followUpDate   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum ApplicationStatus {
+  APPLIED
+  VIEWED
+  INTERVIEWING
+  REJECTED
+  HIRED
+}
+
+model UserSearchHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  query     String
+  location  String?
+  searchedAt DateTime @default(now())
+
+  @@index([userId, searchedAt])
+}
+
+model SavedSearch {
+  id        String   @id @default(cuid())
+  userId    String
+  query     String
+  location  String?
+  radius    Int?     @default(25)
+  remoteOnly Boolean @default(false)
+  createdAt DateTime @default(now())
+  
+  @@index([userId, createdAt])
+}
+
+// New model for storing search results in database
+model SearchResult {
+  id          String   @id @default(cuid())
+  userId      String
+  query       String
+  location    String?
+  radius      Int      @default(25)
+  jobResults  String   // JSON string of full job data
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime // 24 hours from creation
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, createdAt])
+  @@index([expiresAt]) // For cleanup queries
+}
+
+// Job detail pages - store full job data for internal pages
+model JobDetail {
+  id          String   @id @default(cuid())
+  jobId       String   @unique // Composite job ID (e.g., "adzuna-123", "jsearch-456")
+  provider    String   // Provider name (adzuna, jsearch, etc.)
+  originalId  String   // Original job ID from provider
+  jobData     String   // JSON string of full job data
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  expiresAt   DateTime // 24 hours from creation for cleanup
+  
+  @@index([jobId])
+  @@index([provider, originalId])
+  @@index([expiresAt]) // For cleanup queries
+}

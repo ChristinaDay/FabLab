@@ -1,0 +1,501 @@
+{
+  "figmaFile": "UpDrift Layout Specifications",
+  "description": "Component specifications for complex layouts in UpDrift",
+  "version": "1.0.0", 
+  "lastUpdated": "2025-01-31",
+  
+  "layouts": {
+    "heroSection": {
+      "name": "Hero Section with Cosmic Elements",
+      "description": "Main landing page hero combining cosmic visuals with functional content",
+      "specifications": {
+        "dimensions": {
+          "minHeight": "600px",
+          "maxHeight": "100vh",
+          "width": "100vw"
+        },
+        "layers": {
+          "starfield": {
+            "zIndex": 1,
+            "coverage": "full viewport",
+            "description": "Background layer with 3 parallax star layers"
+          },
+          "cosmicRiver": {
+            "zIndex": 3,
+            "height": "200px",
+            "position": "absolute, centered vertically",
+            "description": "Animated wave system"
+          },
+          "particles": {
+            "zIndex": 4,
+            "container": "within river boundaries",
+            "count": "60 particles",
+            "description": "Physics-based flowing particles"
+          },
+          "content": {
+            "zIndex": 10,
+            "maxWidth": "1200px",
+            "margin": "0 auto",
+            "padding": "2rem",
+            "description": "Hero text, search form, and CTAs"
+          }
+        },
+        "contentLayout": {
+          "title": {
+            "fontSize": "clamp(3rem, 8vw, 6rem)",
+            "fontWeight": 700,
+            "textAlign": "center",
+            "marginBottom": "1.5rem",
+            "effect": "gradient-text with theme colors"
+          },
+          "subtitle": {
+            "fontSize": "clamp(1.25rem, 3vw, 1.5rem)",
+            "fontWeight": 400,
+            "textAlign": "center", 
+            "marginBottom": "3rem",
+            "opacity": "0.9"
+          },
+          "searchForm": {
+            "maxWidth": "800px",
+            "margin": "0 auto 2rem",
+            "display": "grid",
+            "gridTemplate": "auto / 1fr auto",
+            "gap": "1rem",
+            "background": "glassmorphic effect"
+          },
+          "ctaButtons": {
+            "display": "flex",
+            "justifyContent": "center",
+            "gap": "1rem",
+            "flexWrap": "wrap"
+          }
+        }
+      },
+      "responsiveBreakpoints": {
+        "desktop": {
+          "minWidth": "1024px",
+          "heroHeight": "600px",
+          "titleSize": "6rem",
+          "searchLayout": "horizontal"
+        },
+        "tablet": {
+          "minWidth": "768px",
+          "maxWidth": "1023px", 
+          "heroHeight": "500px",
+          "titleSize": "4rem",
+          "searchLayout": "horizontal"
+        },
+        "mobile": {
+          "maxWidth": "767px",
+          "heroHeight": "400px", 
+          "titleSize": "3rem",
+          "searchLayout": "vertical stacked"
+        }
+      }
+    },
+    
+    "jobGrid": {
+      "name": "Job Results Grid Layout",
+      "description": "Responsive grid for displaying job search results",
+      "specifications": {
+        "container": {
+          "maxWidth": "1200px",
+          "margin": "0 auto",
+          "padding": "2rem 1rem"
+        },
+        "grid": {
+          "display": "grid",
+          "gap": "1.5rem",
+          "gridTemplateColumns": {
+            "desktop": "repeat(auto-fit, minmax(400px, 1fr))",
+            "tablet": "repeat(auto-fit, minmax(350px, 1fr))",
+            "mobile": "1fr"
+          }
+        },
+        "jobCard": {
+          "dimensions": {
+            "minHeight": "180px",
+            "padding": "1.5rem",
+            "borderRadius": "12px"
+          },
+          "background": "glassmorphic with theme adaptation",
+          "border": "1px solid theme border color",
+          "layout": {
+            "header": {
+              "display": "flex",
+              "alignItems": "flex-start", 
+              "gap": "1rem",
+              "marginBottom": "1rem"
+            },
+            "logo": {
+              "width": "48px",
+              "height": "48px",
+              "borderRadius": "8px",
+              "flexShrink": 0,
+              "display": "conditional (only if logo available)"
+            },
+            "titleSection": {
+              "flex": 1,
+              "minWidth": 0
+            },
+            "title": {
+              "fontSize": "1.25rem",
+              "fontWeight": 600,
+              "marginBottom": "0.25rem",
+              "overflow": "hidden",
+              "textOverflow": "ellipsis"
+            },
+            "company": {
+              "fontSize": "1rem",
+              "opacity": "0.8",
+              "marginBottom": "0.5rem"
+            },
+            "location": {
+              "fontSize": "0.875rem", 
+              "opacity": "0.7",
+              "display": "flex",
+              "alignItems": "center",
+              "gap": "0.25rem"
+            },
+            "content": {
+              "marginBottom": "1rem"
+            },
+            "description": {
+              "fontSize": "0.875rem",
+              "lineHeight": 1.5,
+              "marginBottom": "1rem",
+              "maxHeight": "4.5em",
+              "overflow": "hidden"
+            },
+            "footer": {
+              "display": "flex",
+              "justifyContent": "space-between",
+              "alignItems": "center",
+              "flexWrap": "wrap",
+              "gap": "1rem"
+            },
+            "salary": {
+              "fontSize": "1rem",
+              "fontWeight": 600,
+              "color": "theme success color"
+            },
+            "actionButton": {
+              "padding": "0.5rem 1rem",
+              "borderRadius": "6px",
+              "fontSize": "0.875rem",
+              "fontWeight": 500,
+              "variants": {
+                "default": "primary theme color",
+                "viewed": "yellow/amber theme",
+                "applied": "green theme (disabled)",
+                "interviewing": "blue theme (disabled)"
+              }
+            }
+          }
+        }
+      }
+    },
+    
+    "dashboard": {
+      "name": "User Dashboard Layout",
+      "description": "Comprehensive dashboard with cosmic background and multiple sections",
+      "specifications": {
+        "layout": {
+          "display": "grid",
+          "gridTemplate": "auto 1fr / 1fr",
+          "minHeight": "100vh"
+        },
+        "header": {
+          "height": "64px",
+          "background": "glassmorphic header",
+          "borderBottom": "1px solid theme border",
+          "padding": "0 2rem",
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "space-between"
+        },
+        "main": {
+          "position": "relative",
+          "background": "cosmic starfield background"
+        },
+        "content": {
+          "position": "relative",
+          "zIndex": 10,
+          "maxWidth": "1200px",
+          "margin": "0 auto",
+          "padding": "2rem"
+        },
+        "sections": {
+          "welcomeSection": {
+            "marginBottom": "3rem",
+            "textAlign": "center"
+          },
+          "statsGrid": {
+            "display": "grid",
+            "gridTemplate": "repeat(auto-fit, minmax(250px, 1fr))",
+            "gap": "1.5rem",
+            "marginBottom": "3rem"
+          },
+          "statCard": {
+            "background": "glassmorphic card",
+            "padding": "1.5rem",
+            "borderRadius": "12px",
+            "textAlign": "center"
+          },
+          "recentActivity": {
+            "background": "glassmorphic card",
+            "borderRadius": "12px",
+            "padding": "1.5rem"
+          }
+        }
+      }
+    },
+    
+    "searchInterface": {
+      "name": "Advanced Search Interface",
+      "description": "Search page with filters, results, and cosmic background",
+      "specifications": {
+        "layout": {
+          "display": "grid",
+          "gridTemplate": "auto 1fr / 300px 1fr",
+          "gap": "2rem",
+          "minHeight": "100vh",
+          "responsive": {
+            "mobile": "grid-template: auto auto 1fr / 1fr"
+          }
+        },
+        "sidebar": {
+          "width": "300px",
+          "background": "glassmorphic sidebar",
+          "padding": "1.5rem",
+          "borderRadius": "12px",
+          "height": "fit-content",
+          "position": "sticky",
+          "top": "2rem",
+          "responsive": {
+            "mobile": "full width, collapsible"
+          }
+        },
+        "mainContent": {
+          "flex": 1,
+          "minWidth": 0
+        },
+        "searchHeader": {
+          "background": "glassmorphic header",
+          "padding": "1.5rem",
+          "borderRadius": "12px",
+          "marginBottom": "1.5rem"
+        },
+        "resultsContainer": {
+          "background": "glassmorphic container",
+          "borderRadius": "12px",
+          "padding": "1.5rem"
+        },
+        "pagination": {
+          "display": "flex",
+          "justifyContent": "center",
+          "alignItems": "center",
+          "gap": "0.5rem",
+          "marginTop": "2rem"
+        }
+      }
+    },
+    
+    "mobileNavigation": {
+      "name": "Mobile Navigation System",
+      "description": "Mobile-optimized navigation with cosmic theming",
+      "specifications": {
+        "header": {
+          "height": "64px",
+          "position": "fixed",
+          "top": 0,
+          "width": "100%",
+          "zIndex": 1000,
+          "background": "glassmorphic with backdrop blur"
+        },
+        "hamburgerMenu": {
+          "position": "fixed",
+          "top": "64px",
+          "left": 0,
+          "width": "100%",
+          "height": "calc(100vh - 64px)",
+          "background": "glassmorphic overlay",
+          "transform": "translateX(-100%) when closed",
+          "transition": "transform 0.3s ease"
+        },
+        "menuItems": {
+          "padding": "2rem",
+          "display": "flex",
+          "flexDirection": "column",
+          "gap": "1rem"
+        },
+        "bottomNavigation": {
+          "position": "fixed",
+          "bottom": 0,
+          "width": "100%",
+          "height": "64px",
+          "background": "glassmorphic bottom nav",
+          "display": "flex",
+          "justifyContent": "space-around",
+          "alignItems": "center",
+          "zIndex": 1000
+        }
+      }
+    }
+  },
+  
+  "components": {
+    "glassmorphicCard": {
+      "name": "Glassmorphic Card Component",
+      "description": "Standard card component with glass effect",
+      "specifications": {
+        "background": "rgba(255, 255, 255, 0.1)",
+        "backdropFilter": "blur(10px)",
+        "border": "1px solid rgba(255, 255, 255, 0.2)",
+        "borderRadius": "12px",
+        "padding": "1.5rem",
+        "boxShadow": "0 8px 32px rgba(0, 0, 0, 0.1)"
+      }
+    },
+    
+    "gradientButton": {
+      "name": "Gradient Button Component", 
+      "description": "Theme-aware gradient button",
+      "specifications": {
+        "background": "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-dark)))",
+        "color": "hsl(var(--primary-foreground))",
+        "border": "none",
+        "borderRadius": "8px",
+        "padding": "0.75rem 1.5rem",
+        "fontSize": "1rem",
+        "fontWeight": 500,
+        "cursor": "pointer",
+        "transition": "all 0.2s ease",
+        "hover": {
+          "transform": "translateY(-2px)",
+          "boxShadow": "0 8px 25px hsl(var(--primary) / 0.3)"
+        }
+      }
+    },
+    
+    "searchInput": {
+      "name": "Search Input Component",
+      "description": "Glassmorphic search input with icon",
+      "specifications": {
+        "container": {
+          "position": "relative",
+          "display": "flex",
+          "alignItems": "center"
+        },
+        "input": {
+          "width": "100%",
+          "padding": "1rem 1rem 1rem 3rem",
+          "background": "rgba(255, 255, 255, 0.1)",
+          "backdropFilter": "blur(10px)",
+          "border": "1px solid rgba(255, 255, 255, 0.2)",
+          "borderRadius": "12px",
+          "fontSize": "1rem",
+          "color": "hsl(var(--foreground))",
+          "placeholder": {
+            "color": "hsl(var(--muted-foreground))"
+          }
+        },
+        "icon": {
+          "position": "absolute",
+          "left": "1rem",
+          "width": "20px",
+          "height": "20px",
+          "color": "hsl(var(--muted-foreground))"
+        }
+      }
+    }
+  },
+  
+  "designPatterns": {
+    "layering": {
+      "description": "Z-index hierarchy for cosmic elements and UI",
+      "layers": [
+        { "level": 1, "element": "Starfield background", "zIndex": 1 },
+        { "level": 2, "element": "Cosmic river background waves", "zIndex": 2 },
+        { "level": 3, "element": "Cosmic river main waves", "zIndex": 3 },
+        { "level": 4, "element": "River particles", "zIndex": 4 },
+        { "level": 5, "element": "UI background elements", "zIndex": 5 },
+        { "level": 6, "element": "Main content", "zIndex": 10 },
+        { "level": 7, "element": "Modals and overlays", "zIndex": 1000 }
+      ]
+    },
+    
+    "spacing": {
+      "description": "Consistent spacing system",
+      "scale": [
+        { "name": "xs", "value": "4px", "usage": "Icon spacing, small gaps" },
+        { "name": "sm", "value": "8px", "usage": "Component internal spacing" },
+        { "name": "md", "value": "16px", "usage": "Standard component spacing" },
+        { "name": "lg", "value": "24px", "usage": "Section spacing" },
+        { "name": "xl", "value": "32px", "usage": "Major section breaks" },
+        { "name": "2xl", "value": "48px", "usage": "Page section spacing" },
+        { "name": "3xl", "value": "64px", "usage": "Major page breaks" }
+      ]
+    },
+    
+    "typography": {
+      "description": "Typography scale and hierarchy",
+      "hierarchy": [
+        { "level": "h1", "size": "3-6rem", "weight": 700, "usage": "Page titles, hero headings" },
+        { "level": "h2", "size": "2-3rem", "weight": 600, "usage": "Section headings" },
+        { "level": "h3", "size": "1.5-2rem", "weight": 600, "usage": "Subsection headings" },
+        { "level": "h4", "size": "1.25rem", "weight": 600, "usage": "Card titles" },
+        { "level": "body", "size": "1rem", "weight": 400, "usage": "Standard text" },
+        { "level": "small", "size": "0.875rem", "weight": 400, "usage": "Secondary text" },
+        { "level": "caption", "size": "0.75rem", "weight": 400, "usage": "Captions, metadata" }
+      ]
+    }
+  },
+  
+  "responsiveStrategy": {
+    "breakpoints": {
+      "mobile": { "max": "767px" },
+      "tablet": { "min": "768px", "max": "1023px" },
+      "desktop": { "min": "1024px" }
+    },
+    "adaptations": {
+      "cosmic": {
+        "mobile": "Simplified particle count, reduced wave amplitude",
+        "tablet": "Proportional scaling, maintained visual hierarchy",
+        "desktop": "Full system with all optimizations"
+      },
+      "layout": {
+        "mobile": "Single column, collapsible navigation",
+        "tablet": "Flexible grid, maintained card proportions",
+        "desktop": "Multi-column, full sidebar"
+      },
+      "typography": {
+        "mobile": "Smaller scales, tighter line heights",
+        "tablet": "Intermediate scaling",
+        "desktop": "Full typographic hierarchy"
+      }
+    }
+  },
+  
+  "figmaImplementation": {
+    "componentStructure": [
+      "Create master components for each layout type",
+      "Use auto-layout for responsive behavior",
+      "Create variants for different screen sizes",
+      "Document cosmic elements as 'special components'",
+      "Include technical specifications in component descriptions"
+    ],
+    "tokenIntegration": [
+      "Import color tokens from design system",
+      "Use semantic token names for theme adaptation",
+      "Create cosmic-specific token collection",
+      "Document token usage in component specs"
+    ],
+    "documentation": [
+      "Include implementation notes for developers",
+      "Document responsive behavior clearly",
+      "Specify cosmic element integration points",
+      "Provide code references for complex elements"
+    ]
+  }
+}

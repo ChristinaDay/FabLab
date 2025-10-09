@@ -1,0 +1,397 @@
+{
+  "figmaFile": "UpDrift Cosmic Elements Documentation",
+  "description": "Template structure for documenting UpDrift's unique cosmic visual elements in Figma",
+  "version": "1.0.0",
+  "lastUpdated": "2025-01-31",
+  
+  "pages": [
+    {
+      "name": "🌌 Cosmic System Overview",
+      "description": "High-level overview of all cosmic elements working together",
+      "frames": [
+        {
+          "name": "Hero Section - Full System",
+          "size": { "width": 1920, "height": 600 },
+          "description": "Complete hero section showing all cosmic elements in harmony",
+          "layers": [
+            {
+              "name": "Starfield Background",
+              "type": "background",
+              "zIndex": 1,
+              "description": "Three-layer parallax star system - document as static representation"
+            },
+            {
+              "name": "Cosmic River",
+              "type": "animated-element", 
+              "zIndex": 3,
+              "description": "Dynamic wave system - show 4 keyframes of animation"
+            },
+            {
+              "name": "River Particles",
+              "type": "particle-system",
+              "zIndex": 4,
+              "description": "Physics-based particles - show particle distribution"
+            },
+            {
+              "name": "Content Layer",
+              "type": "ui-content",
+              "zIndex": 10,
+              "description": "Hero text and CTA buttons with glassmorphic styling"
+            }
+          ]
+        }
+      ]
+    },
+    
+    {
+      "name": "⭐ Starfield System",
+      "description": "Detailed documentation of the parallax starfield background",
+      "frames": [
+        {
+          "name": "Starfield - Layer Breakdown",
+          "size": { "width": 1920, "height": 400 },
+          "layers": [
+            {
+              "name": "Layer 2 - Background Stars",
+              "particles": {
+                "count": 20,
+                "size": "1px",
+                "opacity": "30%",
+                "speed": "120s cycle",
+                "color": "#FFFFFF"
+              }
+            },
+            {
+              "name": "Layer 1 - Middle Stars", 
+              "particles": {
+                "count": 30,
+                "size": "2px", 
+                "opacity": "60%",
+                "speed": "90s cycle",
+                "color": "#FFFFFF"
+              }
+            },
+            {
+              "name": "Layer 0 - Foreground Stars",
+              "particles": {
+                "count": 40,
+                "size": "3px",
+                "opacity": "100%", 
+                "speed": "60s cycle",
+                "color": "#FFFFFF"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Starfield - Motion Documentation",
+          "size": { "width": 1920, "height": 200 },
+          "description": "Show directional arrows and speed indicators",
+          "annotations": [
+            "Arrow pointing right: 'Continuous horizontal scroll'",
+            "Speed indicators: '1x, 1.5x, 2x relative speeds'",
+            "Note: 'Parallax effect creates depth perception'"
+          ]
+        }
+      ]
+    },
+    
+    {
+      "name": "🌊 Cosmic River System", 
+      "description": "Mathematical wave system with dynamic animation",
+      "frames": [
+        {
+          "name": "River - Wave Mathematics",
+          "size": { "width": 1920, "height": 200 },
+          "layers": [
+            {
+              "name": "Top Wave",
+              "parameters": {
+                "amplitude": "10px",
+                "frequency": "1.2",
+                "yPosition": "62px",
+                "phase": "1"
+              }
+            },
+            {
+              "name": "Bottom Wave",
+              "parameters": {
+                "amplitude": "7px",
+                "frequency": "1.7", 
+                "yPosition": "138px",
+                "phase": "1.3"
+              }
+            },
+            {
+              "name": "Background Waves",
+              "description": "Larger amplitude waves for depth",
+              "opacity": "40%"
+            }
+          ]
+        },
+        {
+          "name": "River - Animation Keyframes",
+          "size": { "width": 7680, "height": 200 },
+          "description": "Show 4 keyframes of wave animation cycle",
+          "keyframes": [
+            { "time": "0%", "description": "Wave cycle start" },
+            { "time": "25%", "description": "Quarter cycle" },
+            { "time": "50%", "description": "Half cycle" }, 
+            { "time": "75%", "description": "Three-quarter cycle" }
+          ]
+        },
+        {
+          "name": "River - Color Variations",
+          "size": { "width": 1920, "height": 800 },
+          "description": "Show river in different theme colors",
+          "variants": [
+            { "theme": "Cyber", "colors": ["#4285f4", "#66a3ff"] },
+            { "theme": "Ocean", "colors": ["#0891b2", "#67e8f9"] },
+            { "theme": "Forest", "colors": ["#059669", "#34d399"] },
+            { "theme": "Ember", "colors": ["#dc2626", "#f87171"] }
+          ]
+        }
+      ]
+    },
+    
+    {
+      "name": "✨ Particle Physics",
+      "description": "Interactive particles flowing within river boundaries",
+      "frames": [
+        {
+          "name": "Particles - Distribution Pattern",
+          "size": { "width": 1920, "height": 200 },
+          "description": "Show how particles follow river curve",
+          "particles": {
+            "count": 60,
+            "sizeRange": "0.8px - 3px",
+            "opacityRange": "40% - 100%",
+            "flowDirection": "Left to right",
+            "boundaryDetection": "River wave boundaries"
+          }
+        },
+        {
+          "name": "Particles - Physics Documentation",
+          "size": { "width": 1920, "height": 400 },
+          "annotations": [
+            "Velocity: 0.5-2.0 units per frame",
+            "Boundary: Particles stay within wave area",
+            "Collision: Bounce off river walls",
+            "Lifecycle: Respawn when exiting viewport",
+            "Twinkling: Opacity sine wave modulation"
+          ]
+        },
+        {
+          "name": "Particles - Size and Glow Effects",  
+          "size": { "width": 400, "height": 400 },
+          "description": "Detailed view of particle rendering",
+          "effects": [
+            "Primary glow: 0 0 8px hsl(var(--primary) / 0.6)",
+            "Secondary glow: 0 0 16px hsl(var(--primary) / 0.3)",
+            "Core particle: Solid color at full opacity"
+          ]
+        }
+      ]
+    },
+    
+    {
+      "name": "🎨 Theme Integration",
+      "description": "How cosmic elements adapt to different themes",
+      "frames": [
+        {
+          "name": "Light Themes",
+          "size": { "width": 1920, "height": 1200 },
+          "themes": [
+            {
+              "name": "Dawn",
+              "cosmic": {
+                "riverColors": ["#f59e0b", "#fbbf24"],
+                "starfieldColor": "#1f2937",
+                "particleColor": "#f59e0b"
+              }
+            },
+            {
+              "name": "Forest", 
+              "cosmic": {
+                "riverColors": ["#059669", "#34d399"],
+                "starfieldColor": "#1f2937", 
+                "particleColor": "#059669"
+              }
+            },
+            {
+              "name": "Sakura",
+              "cosmic": {
+                "riverColors": ["#ec4899", "#f9a8d4"],
+                "starfieldColor": "#1f2937",
+                "particleColor": "#ec4899"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Dark Themes",
+          "size": { "width": 1920, "height": 1200 },
+          "themes": [
+            {
+              "name": "Cyber",
+              "cosmic": {
+                "riverColors": ["#4285f4", "#66a3ff"],
+                "starfieldColor": "#ffffff",
+                "particleColor": "#4285f4"
+              }
+            },
+            {
+              "name": "Neon",
+              "cosmic": {
+                "riverColors": ["#a855f7", "#c084fc"],
+                "starfieldColor": "#ffffff",
+                "particleColor": "#a855f7"
+              }
+            },
+            {
+              "name": "Ocean", 
+              "cosmic": {
+                "riverColors": ["#0891b2", "#67e8f9"],
+                "starfieldColor": "#ffffff",
+                "particleColor": "#0891b2"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    
+    {
+      "name": "📱 Responsive Behavior",
+      "description": "How cosmic elements adapt to different screen sizes",
+      "frames": [
+        {
+          "name": "Desktop - Full System",
+          "size": { "width": 1920, "height": 600 },
+          "description": "Complete cosmic system with all elements"
+        },
+        {
+          "name": "Tablet - Scaled System", 
+          "size": { "width": 768, "height": 400 },
+          "description": "Proportionally scaled, same visual hierarchy"
+        },
+        {
+          "name": "Mobile - Simplified System",
+          "size": { "width": 375, "height": 300 },
+          "description": "Reduced particle count, optimized performance",
+          "modifications": [
+            "Particles: 30 instead of 60",
+            "Wave amplitude: Reduced by 30%",
+            "Starfield: 2 layers instead of 3"
+          ]
+        }
+      ]
+    },
+    
+    {
+      "name": "🔧 Technical Specifications",
+      "description": "Developer reference for implementation",
+      "frames": [
+        {
+          "name": "Performance Metrics",
+          "size": { "width": 800, "height": 600 },
+          "specifications": {
+            "targetFPS": "60fps",
+            "animationMethod": "requestAnimationFrame",
+            "gpuAcceleration": "transform3d",
+            "memoryManagement": "Particle recycling",
+            "mobileOptimization": "Reduced particle count"
+          }
+        },
+        {
+          "name": "CSS Custom Properties",
+          "size": { "width": 800, "height": 800 },
+          "properties": [
+            "--cosmic-river-primary: hsl(var(--primary))",
+            "--cosmic-river-secondary: hsl(var(--primary) / 0.8)", 
+            "--starfield-primary: hsl(var(--foreground))",
+            "--particle-opacity-min: 0.4",
+            "--particle-opacity-max: 1.0"
+          ]
+        },
+        {
+          "name": "JavaScript Integration Points",
+          "size": { "width": 800, "height": 600 },
+          "codeReferences": [
+            "Wave generation: /src/app/page.tsx lines 33-100",
+            "Starfield system: /src/app/page.tsx lines 166-233", 
+            "Particle physics: /src/app/page.tsx lines 285-329",
+            "Theme integration: /src/lib/themes.ts"
+          ]
+        }
+      ]
+    }
+  ],
+  
+  "designTokens": {
+    "cosmic": {
+      "river": {
+        "primary": "Main river color - matches theme primary",
+        "secondary": "Secondary gradient color",
+        "background": "Background wave color"
+      },
+      "starfield": {
+        "primary": "Main star color",
+        "opacity": {
+          "near": "1.0 - closest layer",
+          "mid": "0.6 - middle layer", 
+          "far": "0.3 - farthest layer"
+        }
+      },
+      "particles": {
+        "primary": "Main particle color",
+        "glow": "Particle glow effect",
+        "opacity": {
+          "min": "0.4 - minimum opacity",
+          "max": "1.0 - maximum opacity"
+        }
+      }
+    }
+  },
+  
+  "exportInstructions": {
+    "workflow": [
+      "1. Create new Figma file using this template structure",
+      "2. Import color tokens from /public/updrift-figma-export.json",
+      "3. Create static representations of animated elements",
+      "4. Document technical specifications for developers",
+      "5. Export refined tokens back to /public/design-tokens.json"
+    ],
+    "principles": [
+      "Preserve uniqueness - don't genericize cosmic elements",
+      "Document thoroughly - include technical parameters", 
+      "Show variations - demonstrate theme adaptability",
+      "Emphasize value - highlight competitive differentiation"
+    ]
+  },
+  
+  "portfolioPresentation": {
+    "caseStudyFrames": [
+      {
+        "name": "Problem Statement",
+        "content": "Generic job search platforms lack visual differentiation"
+      },
+      {
+        "name": "Solution Approach", 
+        "content": "Cosmic theme creates memorable, premium experience"
+      },
+      {
+        "name": "Technical Implementation",
+        "content": "Mathematical precision meets artistic vision"
+      },
+      {
+        "name": "Design System Impact",
+        "content": "Unique elements integrated with scalable token system"
+      },
+      {
+        "name": "Results & Metrics",
+        "content": "Distinctive brand identity with measurable engagement"
+      }
+    ]
+  }
+}
