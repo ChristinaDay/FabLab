@@ -23,6 +23,13 @@ export default function SignInPage() {
     else setStatus('Check your email for a sign-in link. After clicking it, you will land on /admin.')
   }
 
+  async function signInWithProvider(provider: 'github' | 'google') {
+    setStatus(`Redirecting to ${provider}...`)
+    const redirectTo = `${window.location.origin}/admin`
+    const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } })
+    if (error) setStatus(error.message)
+  }
+
   async function signOut() {
     await supabase.auth.signOut()
     setUserEmail(null)
@@ -42,18 +49,29 @@ export default function SignInPage() {
             </div>
           </div>
         ) : (
-          <form onSubmit={sendMagicLink} className="space-y-3 max-w-md">
-            <input
-              type="email"
-              required
-              className="w-full border rounded px-3 py-2"
-              placeholder="your@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <button type="submit" className="px-4 py-2 rounded bg-black text-white hover:opacity-90">Email me a sign‑in link</button>
+          <div className="space-y-6 max-w-md">
+            <form onSubmit={sendMagicLink} className="space-y-3">
+              <input
+                type="email"
+                required
+                className="w-full border rounded px-3 py-2"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <button type="submit" className="px-4 py-2 rounded bg-black text-white hover:opacity-90">Email me a sign‑in link</button>
+            </form>
+
+            <div className="space-y-2">
+              <div className="text-sm text-gray-600">Or continue with</div>
+              <div className="flex gap-2">
+                <button onClick={() => signInWithProvider('github')} className="px-4 py-2 rounded border hover:bg-gray-50">GitHub</button>
+                <button onClick={() => signInWithProvider('google')} className="px-4 py-2 rounded border hover:bg-gray-50">Google</button>
+              </div>
+            </div>
+
             {status ? <div className="text-sm text-gray-700">{status}</div> : null}
-          </form>
+          </div>
         )}
       </main>
     </>
