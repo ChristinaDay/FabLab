@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '@/lib/db'
 import Nav from '@/components/Nav'
-import { supabase } from '@/lib/db'
 
 type Item = {
   id: string
