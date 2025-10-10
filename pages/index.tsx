@@ -7,7 +7,7 @@ export default function Home({ items }: { items: any[] }) {
     <>
       <Nav />
       <main className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">FabMurmur</h1>
+      <h1 className="text-3xl font-bold mb-6">ShopTalk</h1>
       {items.length === 0 ? (
         <div className="text-gray-600">
           No items published yet. Go to{' '}

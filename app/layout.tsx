@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FabMurmur",
-  description: "Your creative fabrication community",
+  title: "ShopTalk",
+  description: "News and jobs for makers and fabricators",
 };
 
 export default function RootLayout({
