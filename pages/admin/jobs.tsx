@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import Nav from '@/components/Nav'
+import { supabase } from '@/lib/db'
 
 type Job = {
   id?: string
@@ -29,8 +30,16 @@ export default function AdminJobsPage() {
   const [newQuery, setNewQuery] = useState('')
 
   useEffect(() => {
-    fetchJobs()
-    fetchSources()
+    supabase.auth.getUser().then(({ data }) => {
+      const email = data.user?.email || ''
+      const allow = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '').split(',').map((s) => s.trim()).filter(Boolean)
+      if (allow.length && !allow.includes(email)) {
+        window.location.href = '/signin'
+        return
+      }
+      fetchJobs()
+      fetchSources()
+    })
   }, [])
 
   async function fetchJobs() {

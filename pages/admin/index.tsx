@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '@/lib/db'
 import Nav from '@/components/Nav'
+import { supabase } from '@/lib/db'
 
 type Item = {
   id: string
@@ -42,7 +43,15 @@ export default function AdminPage() {
   const [groupBy, setGroupBy] = useState<'none'|'date'|'source'|'topic'>('none')
 
   useEffect(() => {
-    fetchItems()
+    supabase.auth.getUser().then(({ data }) => {
+      const email = data.user?.email || ''
+      const allow = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '').split(',').map((s) => s.trim()).filter(Boolean)
+      if (allow.length && !allow.includes(email)) {
+        window.location.href = '/signin'
+        return
+      }
+      fetchItems()
+    })
   }, [])
 
   async function fetchItems() {
