@@ -11,6 +11,11 @@ export async function middleware(req: NextRequest) {
   const needsAuth = pathname.startsWith('/api/admin')
   if (!needsAuth) return NextResponse.next()
 
+  // If no admin emails are configured, bypass auth (useful for local dev)
+  if (ADMIN_EMAILS.length === 0) {
+    return NextResponse.next()
+  }
+
   // Prefer Authorization header from client fetch; fall back to cookie
   const bearer = req.headers.get('authorization') || ''
   const tokenFromHeader = bearer.toLowerCase().startsWith('bearer ')
@@ -24,7 +29,7 @@ export async function middleware(req: NextRequest) {
   const supabase = createClient(supabaseUrl, supabaseAnonKey)
   const { data } = await supabase.auth.getUser(accessToken)
   const email = data.user?.email
-  const isAdmin = !!email && (ADMIN_EMAILS.length === 0 || ADMIN_EMAILS.includes(email))
+  const isAdmin = !!email && ADMIN_EMAILS.includes(email)
   if (!isAdmin) return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
   return NextResponse.next()
 }

@@ -1,6 +1,6 @@
 import React from 'react'
 import Nav from '@/components/Nav'
-import { fetchVisibleItemsFiltered } from '@/lib/db'
+import { fetchVisibleItemsFiltered, fetchFeatured, fetchPicks, fetchRecentExcluding, fetchByTagExcluding } from '@/lib/db'
 
 export default function Home({ items }: { items: any[] }) {
   const [featuredItem, ...restItems] = items
@@ -17,7 +17,8 @@ export default function Home({ items }: { items: any[] }) {
             <a href="/admin" className="underline text-black hover:text-gray-900">/admin</a> to ingest a feed and publish.
           </div>
         ) : (
-          <div className="grid grid-cols-12 gap-6">
+          <>
+          <div className="grid grid-cols-12 gap-6 section">
             {/* Left: Today's Picks */}
             <aside className="col-span-12 md:col-span-4 lg:col-span-3">
               <div className="badge-dark mb-3 inline-block">Today's Picks</div>
@@ -72,6 +73,64 @@ export default function Home({ items }: { items: any[] }) {
               </div>
             </aside>
           </div>
+
+          {/* Divider */}
+          <div className="separator my-6" />
+
+          {/* Secondary sections: Blog roll style with mini cards and side notes */}
+          <section className="section">
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-12 md:col-span-8 lg:col-span-9 space-y-6">
+                {restItems.slice(10, 22).map((item: any) => (
+                  <article key={item.id} className="grid grid-cols-12 gap-4 pb-6 border-b last:border-b-0">
+                    {item.thumbnail ? (
+                      <img src={item.thumbnail} alt={item.title} className="col-span-4 md:col-span-3 w-full h-28 object-cover" />
+                    ) : null}
+                    <div className={item.thumbnail ? 'col-span-8 md:col-span-9' : 'col-span-12'}>
+                      <a href={item.link} target="_blank" rel="noreferrer" className="block font-semibold hover:underline">
+                        {item.title}
+                      </a>
+                      {item.excerpt ? (
+                        <p className="text-sm mt-1">{item.excerpt.slice(0, 180)}...</p>
+                      ) : null}
+                      <div className="text-[11px] text-gray-500 mt-1">{item.source} • {new Date(item.published_at).toLocaleDateString()}</div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              <aside className="col-span-12 md:col-span-4 lg:col-span-3">
+                <div className="badge-dark mb-3 inline-block">From the Blog</div>
+                <div className="space-y-5">
+                  {restItems.slice(22, 30).map((item: any) => (
+                    <article key={item.id} className="border-b pb-5 last:border-b-0">
+                      <a href={item.link} target="_blank" rel="noreferrer" className="block text-sm font-semibold leading-snug hover:underline">
+                        {item.title}
+                      </a>
+                      <div className="text-[11px] text-gray-500 mt-1">{new Date(item.published_at).toLocaleDateString()}</div>
+                    </article>
+                  ))}
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          {/* Divider */}
+          <div className="separator my-6" />
+
+          {/* Knowledge bites */}
+          <section className="section">
+            <div className="badge-dark mb-4 inline-block">Quick Reads</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {restItems.slice(30, 38).map((item: any) => (
+                <a key={item.id} href={item.link} target="_blank" rel="noreferrer" className="block border p-3 hover:bg-black/5">
+                  <div className="text-sm font-semibold leading-snug">{item.title}</div>
+                  <div className="text-[11px] text-gray-500 mt-1">{item.source}</div>
+                </a>
+              ))}
+            </div>
+          </section>
+          </>
         )}
       </main>
     </>
@@ -80,7 +139,31 @@ export default function Home({ items }: { items: any[] }) {
 
 export async function getServerSideProps(context: { query: { [key: string]: any } }) {
   const category = context.query.category ? String(context.query.category) : undefined
-  const items = await fetchVisibleItemsFiltered({ limit: 50, category })
+  // Pull curated featured and picks; fall back to filtered feed if needed
+  const [curatedFeatured, curatedPicks] = await Promise.all([
+    fetchFeatured(5).catch(() => []),
+    fetchPicks(6).catch(() => []),
+  ])
+
+  const usedIds = new Set<string>([...curatedFeatured, ...curatedPicks].map((i: any) => i.id))
+  const recent = await fetchRecentExcluding({ limit: 30, excludeIds: Array.from(usedIds) }).catch(() => [])
+
+  let categoryItems: any[] = []
+  if (category) {
+    const exclude = new Set<string>([...usedIds, ...recent.map((r: any) => r.id)])
+    categoryItems = await fetchByTagExcluding({ tag: category, limit: 24, excludeIds: Array.from(exclude) }).catch(() => [])
+  }
+
+  // Compose items list for current UI while keeping previous structure working
+  const composed = [
+    ...(curatedFeatured.length ? curatedFeatured : []),
+    ...curatedPicks,
+    ...recent,
+    ...categoryItems,
+  ]
+
+  const fallback = await fetchVisibleItemsFiltered({ limit: 50, category }).catch(() => [])
+  const items = composed.length ? composed : fallback
   return { props: { items } }
 }
 
