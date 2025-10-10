@@ -97,18 +97,60 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-function tokenizeQuery(q: string): string[] {
-  const parts = (q.toLowerCase().match(/"[^"]+"|\S+/g) || []).map((p) => p.replace(/^"|"$/g, ''))
-  // Deduplicate tokens
-  return Array.from(new Set(parts.filter(Boolean)))
+function tokenizeQuery(q: string): { required: string[]; optional: string[][] } {
+  // Parse query into required terms (AND) and optional groups (OR)
+  // Example: "welder CNC" -> both required
+  // Example: "welder OR fabricator" -> either required
+  const normalized = q.toLowerCase().trim()
+  if (!normalized) return { required: [], optional: [] }
+
+  // Split by OR (case insensitive) to get optional groups
+  const orGroups = normalized.split(/\s+or\s+/i)
+
+  if (orGroups.length > 1) {
+    // Has OR operators - each group is optional
+    const optional = orGroups.map(group => {
+      const parts = (group.match(/"[^"]+"|\S+/g) || []).map((p) => p.replace(/^"|"$/g, '').trim()).filter(Boolean)
+      return parts
+    })
+    return { required: [], optional }
+  }
+
+  // No OR operators - all terms required
+  const parts = (normalized.match(/"[^"]+"|\S+/g) || []).map((p) => p.replace(/^"|"$/g, '').trim())
+  const required = Array.from(new Set(parts.filter(Boolean)))
+  return { required, optional: [] }
 }
 
 function hayIncludesToken(hay: string, token: string): boolean {
-  // Simple plural normalization: if token ends with 's', make trailing 's' optional
+  // More flexible matching: handles plurals, partial word matches, and variations
   const base = token.endsWith('s') ? token.slice(0, -1) : token
   const pattern = token.endsWith('s') ? `${escapeRegex(base)}s?` : escapeRegex(base)
-  const re = new RegExp(`\\b${pattern}\\b`, 'i')
-  return re.test(hay)
+
+  // Try word boundary match first (most precise)
+  const wordBoundaryRe = new RegExp(`\\b${pattern}\\b`, 'i')
+  if (wordBoundaryRe.test(hay)) return true
+
+  // Fallback: partial match for compound words (e.g., "CNC" in "CNC-machinist")
+  const partialRe = new RegExp(pattern, 'i')
+  return partialRe.test(hay)
+}
+
+function matchesTokens(hay: string, tokens: { required: string[]; optional: string[][] }): boolean {
+  // All required tokens must match
+  if (tokens.required.length > 0) {
+    const allRequired = tokens.required.every(t => hayIncludesToken(hay, t))
+    if (!allRequired) return false
+  }
+
+  // At least one token from each optional group must match
+  if (tokens.optional.length > 0) {
+    return tokens.optional.every(group =>
+      group.some(t => hayIncludesToken(hay, t))
+    )
+  }
+
+  return tokens.required.length > 0 // Only match if we had requirements
 }
 
 // --- Location helpers (Updrift-style strict client-side filtering, adapted server-side) ---
@@ -217,10 +259,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (dbErr) throw dbErr
       const qTokens = tokenizeQuery(String(q || ''))
       curatedJobs = (dbJobs || []).filter((j: any) => {
-        if (qTokens.length === 0) return true
+        if (qTokens.required.length === 0 && qTokens.optional.length === 0) return true
         const hay = `${(j.title || '')} ${(j.description || '')} ${(j.company || '')}`.toLowerCase()
-        // Match ANY token, normalized (e.g., "ceramic" vs "ceramics")
-        return qTokens.some((t) => hayIncludesToken(hay, t))
+        // Use the new matchesTokens function for consistent AND/OR logic
+        return matchesTokens(hay, qTokens)
       }).map((j: any) => ({
         id: String(j.id || j.link || ''),
         title: j.title || '',
