@@ -35,5 +35,7 @@ p { color: #6b7280; }
 
 /* Wired-style utilities */
 .badge-dark { background:#111; color:#fff; text-transform:uppercase; letter-spacing:.08em; font-weight:700; font-size:.7rem; padding:.25rem .5rem; border-radius:.125rem; }
+.btn { background:#fff; color:#111; border:1px solid rgba(0,0,0,.5); }
+.btn:hover { background: rgba(0,0,0,.05); }
 .headline-condensed { text-transform:uppercase; letter-spacing:.02em; font-weight:900; }
 .logo-wired .box { display:inline-block; border:2px solid #111; background:#111; color:#fff; padding:0 .25rem; margin-right:.2rem; font-weight:900; }
