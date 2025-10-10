@@ -1,110 +1,86 @@
 import React from 'react'
 import Nav from '@/components/Nav'
-import { fetchVisibleItems } from '@/lib/db'
+import { fetchVisibleItemsFiltered } from '@/lib/db'
 
 export default function Home({ items }: { items: any[] }) {
   const [featuredItem, ...restItems] = items
+  const picks = restItems.slice(0, 3)
+  const recent = restItems.slice(3, 10)
 
   return (
     <>
       <Nav />
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="mb-12 text-center">
-          <h1 className="text-5xl font-bold mb-3 text-gray-900">ShopTalk</h1>
-          <p className="text-xl text-gray-600">News and jobs for makers and fabricators</p>
-        </div>
-
         {items.length === 0 ? (
           <div className="text-center text-gray-600 py-12">
             No items published yet. Go to{' '}
-            <a href="/admin" className="underline text-blue-600 hover:text-blue-800">/admin</a> to ingest a feed and publish.
+            <a href="/admin" className="underline text-black hover:text-gray-900">/admin</a> to ingest a feed and publish.
           </div>
         ) : (
-          <>
-            {/* Featured Article */}
-            {featuredItem && (
-              <article className="mb-12 bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                <div className="grid md:grid-cols-2 gap-0">
-                  {featuredItem.thumbnail && (
-                    <div className="relative h-64 md:h-auto">
-                      <img
-                        src={featuredItem.thumbnail}
-                        alt={featuredItem.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <div className="p-8 flex flex-col justify-center">
-                    <div className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2">
-                      Featured Story
-                    </div>
-                    <a
-                      href={featuredItem.link}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-3xl font-bold mb-3 text-gray-900 hover:text-blue-600 transition-colors"
-                    >
-                      {featuredItem.title}
-                    </a>
-                    <div className="text-sm text-gray-500 mb-4">
-                      {featuredItem.source} • {new Date(featuredItem.published_at).toLocaleDateString()}
-                    </div>
-                    <p className="text-gray-700 leading-relaxed">
-                      {featuredItem.excerpt?.slice(0, 300)}...
-                    </p>
-                  </div>
-                </div>
-              </article>
-            )}
-
-            {/* Latest Stories Grid */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold mb-6 text-gray-900">Latest Stories</h2>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {restItems.map((item: any) => (
-                  <article
-                    key={item.id}
-                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow group"
-                  >
+          <div className="grid grid-cols-12 gap-6">
+            {/* Left: Today's Picks */}
+            <aside className="col-span-12 md:col-span-4 lg:col-span-3">
+              <div className="badge-dark mb-3 inline-block">Today's Picks</div>
+              <div className="space-y-6">
+                {picks.map((item: any) => (
+                  <article key={item.id} className="border-b pb-6 last:border-b-0">
                     {item.thumbnail && (
-                      <div className="relative h-48 overflow-hidden">
-                        <img
-                          src={item.thumbnail}
-                          alt={item.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
+                      <img src={item.thumbnail} alt={item.title} className="w-full h-40 object-cover mb-3" />
                     )}
-                    <div className="p-5">
-                      <a
-                        href={item.link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-lg font-bold text-gray-900 hover:text-blue-600 transition-colors line-clamp-2 mb-2 block"
-                      >
+                    <a href={item.link} target="_blank" rel="noreferrer" className="block font-semibold hover:underline">
+                      {item.title}
+                    </a>
+                    <div className="text-xs text-gray-500 mt-2">{item.source} • {new Date(item.published_at).toLocaleDateString()}</div>
+                  </article>
+                ))}
+              </div>
+            </aside>
+
+            {/* Center: Hero */}
+            <section className="col-span-12 md:col-span-8 lg:col-span-6">
+              {featuredItem && (
+                <article>
+                  {featuredItem.thumbnail && (
+                    <img src={featuredItem.thumbnail} alt={featuredItem.title} className="w-full h-[420px] object-cover" />
+                  )}
+                  <a href={featuredItem.link} target="_blank" rel="noreferrer" className="block headline-condensed text-[2rem] sm:text-[2.5rem] mt-4">
+                    {featuredItem.title}
+                  </a>
+                  <p className="text-gray-500 mt-2">{featuredItem.excerpt?.slice(0, 200)}...</p>
+                  <div className="text-xs text-gray-500 mt-2">{featuredItem.source} • {new Date(featuredItem.published_at).toLocaleDateString()}</div>
+                </article>
+              )}
+            </section>
+
+            {/* Right: Most Recent */}
+            <aside className="col-span-12 lg:col-span-3">
+              <div className="badge-dark mb-3 inline-block">Most Recent</div>
+              <div className="space-y-5">
+                {recent.map((item: any) => (
+                  <article key={item.id} className="grid grid-cols-5 gap-3 items-start">
+                    {item.thumbnail && (
+                      <img src={item.thumbnail} alt={item.title} className="col-span-2 w-full h-16 object-cover" />
+                    )}
+                    <div className={item.thumbnail ? 'col-span-3' : 'col-span-5'}>
+                      <a href={item.link} target="_blank" rel="noreferrer" className="block text-sm font-semibold leading-snug hover:underline">
                         {item.title}
                       </a>
-                      <div className="text-xs text-gray-500 mb-3">
-                        {item.source} • {new Date(item.published_at).toLocaleDateString()}
-                      </div>
-                      <p className="text-sm text-gray-600 line-clamp-3">
-                        {item.excerpt?.slice(0, 150)}
-                      </p>
+                      <div className="text-[11px] text-gray-500 mt-1">{new Date(item.published_at).toLocaleDateString()}</div>
                     </div>
                   </article>
                 ))}
               </div>
-            </div>
-          </>
+            </aside>
+          </div>
         )}
       </main>
     </>
   )
 }
 
-export async function getServerSideProps() {
-  const items = await fetchVisibleItems(50)
+export async function getServerSideProps(context: { query: { [key: string]: any } }) {
+  const category = context.query.category ? String(context.query.category) : undefined
+  const items = await fetchVisibleItemsFiltered({ limit: 50, category })
   return { props: { items } }
 }
 

@@ -64,7 +64,7 @@ export default function Jobs({ jobs }: { jobs: any[] }) {
   return (
     <>
       <Nav />
-      <main className="max-w-4xl mx-auto p-6">
+      <main className="max-w-7xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Jobs</h1>
       <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-2 items-center">
         <input value={globalQ} onChange={(e) => setGlobalQ(e.target.value)} className="border rounded px-3 py-2" placeholder="Extra keyword filter (optional)" />

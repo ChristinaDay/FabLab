@@ -3,7 +3,7 @@ import Parser from 'rss-parser'
 import { getServiceRoleClient, upsertItemServer } from '@/lib/db'
 import { extractOpenGraphImage } from '@/lib/extractOg'
 
-type Body = { feedUrl?: string }
+type Body = { feedUrl?: string; category?: string; tags?: string[] }
 
 const parser = new Parser({})
 
@@ -14,6 +14,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const body = req.body as Body
   const feedUrl = body.feedUrl
   if (!feedUrl) return res.status(400).json({ error: 'Missing feedUrl in body' })
+  const incomingTags = Array.isArray(body.tags)
+    ? body.tags
+    : (body.category ? [body.category] : undefined)
 
   try {
     // Some sites block default fetchers; fetch with a browser-like UA
@@ -87,6 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         source: normalizeSourceName(feed.title || feedUrl),
         thumbnail,
         published_at: publishedAt,
+        tags: incomingTags,
       })
       count++
     }

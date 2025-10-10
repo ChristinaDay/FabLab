@@ -47,6 +47,25 @@ export async function fetchVisibleItems(limit = 50) {
   return data
 }
 
+// Filtered items by category (matches tags array)
+export async function fetchVisibleItemsFiltered({ limit = 50, category }: { limit?: number; category?: string }) {
+  let query = supabase
+    .from('items')
+    .select('*')
+    .eq('visible', true)
+    .order('published_at', { ascending: false })
+    .limit(limit)
+
+  if (category && category.trim()) {
+    // Supabase Postgres: use contains on array/jsonb tags
+    query = query.contains('tags', [category]) as any
+  }
+
+  const { data, error } = await query
+  if (error) throw error
+  return data
+}
+
 // Server-only client (uses service role). Call ONLY on the server.
 export function getServiceRoleClient(): SupabaseClient {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
