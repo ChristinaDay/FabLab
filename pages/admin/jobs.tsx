@@ -187,7 +187,7 @@ export default function AdminJobsPage() {
   return (
     <>
       <Nav />
-      <div className="px-6 max-w-4xl mx-auto">
+      <div className="px-6 max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Jobs Admin</h1>
       <div className="border rounded p-4 mb-8">
         <div className="font-medium mb-2">Job Sources</div>
