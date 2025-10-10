@@ -12,6 +12,7 @@ export default function Nav() {
           <a href="/" className={`${isActive('/') ? 'text-yellow-300 underline' : ''} hover:text-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded`}>Home</a>
           <a href="/jobs" className={`${isActive('/jobs') ? 'text-yellow-300 underline' : ''} hover:text-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded`}>Jobs</a>
           <a href="/admin" className={`${isActive('/admin') ? 'text-yellow-300 underline' : ''} hover:text-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded`}>Admin</a>
+          <a href="/admin/jobs" className={`${isActive('/admin/jobs') ? 'text-yellow-300 underline' : ''} hover:text-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded`}>Admin Jobs</a>
         </div>
       </div>
     </nav>
