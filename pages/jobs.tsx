@@ -67,8 +67,8 @@ export default function Jobs({ jobs }: { jobs: any[] }) {
       <main className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Jobs</h1>
       <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-2 items-center">
-        <input value={loc} onChange={(e) => setLoc(e.target.value)} className="border rounded px-3 py-2" placeholder="Location (e.g. San Francisco)" />
         <input value={globalQ} onChange={(e) => setGlobalQ(e.target.value)} className="border rounded px-3 py-2" placeholder="Extra keyword filter (optional)" />
+        <input value={loc} onChange={(e) => setLoc(e.target.value)} className="border rounded px-3 py-2" placeholder="Location (e.g. San Francisco)" />
         <label className="text-sm flex items-center gap-2">
           <input type="checkbox" checked={strict} onChange={(e) => setStrict(e.target.checked)} /> Exact city match
         </label>
