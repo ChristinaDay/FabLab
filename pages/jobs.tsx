@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import Nav from '@/components/Nav'
+import Footer from '@/components/Footer'
 import { fetchVisibleJobs } from '@/lib/db'
 import { useSearchJobs } from '@/lib/useSearchJobs'
 
@@ -134,6 +135,7 @@ export default function Jobs({ jobs }: { jobs: any[] }) {
         </div>
       )}
       </main>
+      <Footer />
     </>
   )
 }

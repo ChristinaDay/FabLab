@@ -1,5 +1,6 @@
 import React from 'react'
 import Nav from '@/components/Nav'
+import Footer from '@/components/Footer'
 import { fetchVisibleItems } from '@/lib/db'
 
 export default function Home({ items }: { items: any[] }) {
@@ -29,6 +30,7 @@ export default function Home({ items }: { items: any[] }) {
         </div>
       )}
       </main>
+      <Footer />
     </>
   )
 }

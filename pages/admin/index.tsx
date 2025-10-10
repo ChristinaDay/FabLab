@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '@/lib/db'
 import Nav from '@/components/Nav'
+import Footer from '@/components/Footer'
 
 type Item = {
   id: string
@@ -223,6 +224,7 @@ export default function AdminPage() {
         </div>
       )}
       </div>
+      <Footer />
     </>
   )
 }
