@@ -23,6 +23,7 @@ export default function Nav() {
           <a href="/jobs" className={`${isActive('/jobs') ? 'text-black' : 'text-black/70 hover:text-black'}`}>Jobs</a>
           <a href="/admin" className={`${isActive('/admin') ? 'text-black' : 'text-black/70 hover:text-black'}`}>Admin</a>
           <a href="/admin/jobs" className={`${isActive('/admin/jobs') ? 'text-black' : 'text-black/70 hover:text-black'}`}>Admin Jobs</a>
+          <a href="/signin" className="ml-2 px-3 py-1 rounded border hover:bg-gray-50">Sign in</a>
         </nav>
 
         <button aria-label="Menu" className="md:hidden" onClick={() => setOpen(!open)}>
@@ -37,6 +38,7 @@ export default function Nav() {
             <a href="/jobs" className={`${isActive('/jobs') ? 'text-black' : 'text-black/70'}`}>Jobs</a>
             <a href="/admin" className={`${isActive('/admin') ? 'text-black' : 'text-black/70'}`}>Admin</a>
             <a href="/admin/jobs" className={`${isActive('/admin/jobs') ? 'text-black' : 'text-black/70'}`}>Admin Jobs</a>
+            <a href="/signin" className="mt-2 inline-block px-3 py-1 rounded border">Sign in</a>
           </div>
         </div>
       )}
