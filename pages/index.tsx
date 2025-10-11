@@ -9,7 +9,7 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
   const picks = restItems.slice(0, 3)
   const recent = restItems.slice(3, 10)
   const centerSecondaries = mainOther // highlight additional main stories under the hero
-  const centerGrid = restItems.slice(0, 8)
+  const centerGrid = restItems.slice(0, 4)
   const latestList = restItems.slice(21, 33)
   const quickReads = restItems.slice(latestList.length ? 33 : 21, latestList.length ? 41 : 29)
 
@@ -194,6 +194,18 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
           </>
         )}
       </main>
+      <footer className="mt-10 border-t">
+        <div className="max-w-7xl mx-auto px-6 py-8 text-sm text-black/70 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div>
+            © {new Date().getFullYear()} ShopTalk. Curated news and jobs for makers and fabricators.
+          </div>
+          <div className="flex gap-4">
+            <a href="/topstories" className="underline">Top Stories</a>
+            <a href="/jobs" className="underline">Jobs</a>
+            <a href="/admin" className="underline">Admin</a>
+          </div>
+        </div>
+      </footer>
     </>
   )
 }
