@@ -84,8 +84,8 @@ export async function fetchRecentExcluding({ limit = 30, excludeIds = [] as stri
     .order('published_at', { ascending: false })
     .limit(limit * 2) // overfetch then filter client-side to respect exclusions
   if (error) throw error
-  const exclude = new Set(excludeIds)
-  const filtered = (data || []).filter((d) => !exclude.has((d as any).id)).slice(0, limit)
+  const exclude = new Set<string>(excludeIds)
+  const filtered = (data || []).filter((d: any) => !exclude.has((d as any).id)).slice(0, limit)
   return filtered
 }
 
@@ -96,8 +96,8 @@ export async function fetchByTagExcluding({ tag, limit = 12, excludeIds = [] as 
   query = query.eq('visible', true).contains('tags', [tag]).order('published_at', { ascending: false }).limit(limit * 2)
   const { data, error } = await query
   if (error) throw error
-  const exclude = new Set(excludeIds)
-  const filtered = (data || []).filter((d) => !exclude.has((d as any).id)).slice(0, limit)
+  const exclude = new Set<string>(excludeIds)
+  const filtered = (data || []).filter((d: any) => !exclude.has((d as any).id)).slice(0, limit)
   return filtered
 }
 
