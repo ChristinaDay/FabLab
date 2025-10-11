@@ -55,15 +55,42 @@ export default function AdminPage() {
   const [groupBy, setGroupBy] = useState<'none'|'date'|'source'|'topic'>('none')
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      const email = data.user?.email || ''
+    let unsub: { unsubscribe: () => void } | null = null
+    let redirectTimer: any
+    async function init() {
       const allow = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '').split(',').map((s) => s.trim()).filter(Boolean)
-      if (allow.length && !allow.includes(email)) {
-        window.location.href = '/signin'
+      const { data: { session } } = await supabase.auth.getSession()
+      const email = session?.user?.email || ''
+      if (email) {
+        if (allow.length && !allow.includes(email)) {
+          window.location.href = '/signin'
+          return
+        }
+        fetchItems()
         return
       }
-      fetchItems()
-    })
+      // Wait for magic-link session establishment before deciding
+      unsub = supabase.auth.onAuthStateChange((_event, sess) => {
+        const em = sess?.user?.email || ''
+        if (em) {
+          if (allow.length && !allow.includes(em)) {
+            window.location.href = '/signin'
+            return
+          }
+          clearTimeout(redirectTimer)
+          fetchItems()
+        }
+      }).data.subscription
+      // Fallback: if no session after 8s, go to signin
+      redirectTimer = setTimeout(() => {
+        window.location.href = '/signin'
+      }, 8000)
+    }
+    init()
+    return () => {
+      if (unsub) unsub.unsubscribe()
+      if (redirectTimer) clearTimeout(redirectTimer)
+    }
   }, [])
 
   // (helper defined at module scope for use in child components)

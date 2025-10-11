@@ -17,7 +17,7 @@ export default function Nav() {
   const isAdminRoute = router.pathname.startsWith('/admin')
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email || null))
+    supabase.auth.getSession().then(({ data }) => setUserEmail(data.session?.user?.email || null))
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUserEmail(session?.user?.email || null)
     })
