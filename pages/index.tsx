@@ -178,18 +178,19 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
             </>
           )}
 
-          {/* Knowledge bites */}
-          <section className="section">
-            <div className="badge-dark mb-4 inline-block">Quick Reads</div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {quickReads.map((item: any) => (
-                <a key={item.id} href={item.link} target="_blank" rel="noreferrer" className="block border p-3 hover:bg-black/5">
-                  <div className="text-sm font-semibold leading-snug">{item.title}</div>
-                  <div className="text-[11px] text-gray-500 mt-1">{item.source}</div>
-                </a>
-              ))}
-            </div>
-          </section>
+          {quickReads.length > 0 && (
+            <section className="section">
+              <div className="badge-dark mb-4 inline-block">Quick Reads</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {quickReads.map((item: any) => (
+                  <a key={item.id} href={item.link} target="_blank" rel="noreferrer" className="block border p-3 hover:bg-black/5">
+                    <div className="text-sm font-semibold leading-snug">{item.title}</div>
+                    <div className="text-[11px] text-gray-500 mt-1">{item.source}</div>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
           </>
         )}
       </main>
