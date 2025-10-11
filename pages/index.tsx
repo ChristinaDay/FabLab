@@ -74,6 +74,7 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
                   {it.excerpt ? (
                     <p className="text-gray-500 mt-4">{it.excerpt.slice(0, 240)}...</p>
                   ) : null}
+                  <a href={it.link} target="_blank" rel="noreferrer" className="text-sm underline mt-2 inline-block">Read more →</a>
                 </article>
               ))}
             </section>
