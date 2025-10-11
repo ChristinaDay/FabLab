@@ -204,7 +204,7 @@ export default function Nav() {
       {/* Categories row (hide on admin routes) */}
       {!isAdminRoute && (
         <div className="w-full border-t">
-          <nav className="max-w-7xl mx-auto px-4 h-11 flex items-center gap-5 overflow-x-auto text-sm">
+          <nav className="max-w-7xl mx-auto px-4 h-11 flex items-center gap-5 overflow-x-auto overflow-y-hidden text-sm">
             <a href="/?category=industrial-design" className={`whitespace-nowrap py-3 ${router.query.category === 'industrial-design' ? 'text-black font-semibold border-b-2 border-black' : 'text-black/70 hover:text-black border-b-2 border-transparent'}`}>Industrial Design</a>
             <a href="/?category=architecture" className={`whitespace-nowrap py-3 ${router.query.category === 'architecture' ? 'text-black font-semibold border-b-2 border-black' : 'text-black/70 hover:text-black border-b-2 border-transparent'}`}>Architecture</a>
             <a href="/?category=fabrication" className={`whitespace-nowrap py-3 ${router.query.category === 'fabrication' ? 'text-black font-semibold border-b-2 border-black' : 'text-black/70 hover:text-black border-b-2 border-transparent'}`}>Fabrication</a>
