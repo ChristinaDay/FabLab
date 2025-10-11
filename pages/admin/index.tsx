@@ -55,10 +55,21 @@ export default function AdminPage() {
     })
   }, [])
 
+  async function authedFetch(input: RequestInfo | URL, init?: RequestInit) {
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    const headers = {
+      ...(init?.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'Content-Type': 'application/json',
+    } as Record<string, string>
+    return fetch(input, { ...(init || {}), headers })
+  }
+
   async function fetchItems() {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/list')
+      const res = await authedFetch('/api/admin/list')
       const json = await res.json()
       if (!res.ok) throw new Error(json.detail || json.error || 'Failed to load')
       setItems((json.items || []) as Item[])
@@ -72,9 +83,8 @@ export default function AdminPage() {
 
   async function toggleVisible(id: string, current: boolean) {
     try {
-      const res = await fetch('/api/admin/toggle-visible', {
+      const res = await authedFetch('/api/admin/toggle-visible', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, visible: !current }),
       })
       const json = await res.json()
@@ -92,9 +102,8 @@ export default function AdminPage() {
     setIngesting(true)
     setIngestMsg(null)
     try {
-      const res = await fetch('/api/ingest', {
+      const res = await authedFetch('/api/ingest', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ feedUrl: targetUrl, tags: ingestTags.length ? ingestTags : undefined }),
       })
       const json = await res.json()
@@ -133,9 +142,8 @@ export default function AdminPage() {
   async function runBackfill() {
     setBfMsg(null)
     try {
-      const res = await fetch('/api/admin/backfill-tags', {
+      const res = await authedFetch('/api/admin/backfill-tags', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sourceContains: bfSource || undefined, addTag: bfTag }),
       })
       const json = await res.json()
@@ -154,9 +162,8 @@ export default function AdminPage() {
       return
     }
     try {
-      const res = await fetch('/api/admin/feeds-bulk-add', {
+      const res = await authedFetch('/api/admin/feeds-bulk-add', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ urls }),
       })
       const json = await res.json()
@@ -170,7 +177,7 @@ export default function AdminPage() {
 
   async function backfillThumbnails() {
     try {
-      const res = await fetch('/api/admin/backfill-thumbnails', { method: 'POST' })
+      const res = await authedFetch('/api/admin/backfill-thumbnails', { method: 'POST' })
       const json = await res.json()
       if (!res.ok) throw new Error(json.detail || json.error || 'Failed')
       setImportMsg(`Backfilled ${json.updated} thumbnails (checked ${json.checked})`)
@@ -187,9 +194,8 @@ export default function AdminPage() {
       return
     }
     try {
-      const res = await fetch('/api/admin/items-upsert', {
+      const res = await authedFetch('/api/admin/items-upsert', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: addItem.title.trim(),
           link: addItem.link.trim(),
@@ -452,9 +458,8 @@ function AdminItemRow({ it, onToggleVisible }: { it: Item; onToggleVisible: (id:
   async function saveTags() {
     setSaving(true)
     try {
-      const res = await fetch('/api/admin/items-update-tags', {
+      const res = await authedFetch('/api/admin/items-update-tags', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: it.id, tags }),
       })
       const json = await res.json()

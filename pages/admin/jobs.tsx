@@ -42,10 +42,21 @@ export default function AdminJobsPage() {
     })
   }, [])
 
+  async function authedFetch(input: RequestInfo | URL, init?: RequestInit) {
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    const headers = {
+      ...(init?.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'Content-Type': 'application/json',
+    } as Record<string, string>
+    return fetch(input, { ...(init || {}), headers })
+  }
+
   async function fetchJobs() {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/jobs-list')
+      const res = await authedFetch('/api/admin/jobs-list')
       const json = await res.json()
       if (!res.ok) throw new Error(json.detail || json.error || 'Failed to load')
       setJobs(json.jobs || [])
@@ -59,7 +70,7 @@ export default function AdminJobsPage() {
 
   async function fetchSources() {
     try {
-      const res = await fetch('/api/admin/job-sources-list')
+      const res = await authedFetch('/api/admin/job-sources-list')
       const json = await res.json()
       if (!res.ok) throw new Error(json.detail || json.error || 'Failed to load sources')
       setSources(json.sources || [])
@@ -72,9 +83,8 @@ export default function AdminJobsPage() {
   async function updateSource(id: string, patch: { auto_publish?: boolean; active?: boolean }) {
     setSourcesMsg(null)
     try {
-      const res = await fetch('/api/admin/job-sources-update', {
+      const res = await authedFetch('/api/admin/job-sources-update', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...patch }),
       })
       const json = await res.json()
@@ -90,9 +100,8 @@ export default function AdminJobsPage() {
     const q = newQuery.trim()
     if (!q) return
     try {
-      const res = await fetch('/api/admin/job-sources-add', {
+      const res = await authedFetch('/api/admin/job-sources-add', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: newType, query: q }),
       })
       const json = await res.json()
@@ -107,9 +116,8 @@ export default function AdminJobsPage() {
 
   async function handleDeleteSource(id: string) {
     try {
-      const res = await fetch('/api/admin/job-sources-delete', {
+      const res = await authedFetch('/api/admin/job-sources-delete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       })
       const json = await res.json()
@@ -125,9 +133,8 @@ export default function AdminJobsPage() {
     setRunning(true)
     setSourcesMsg(null)
     try {
-      const res = await fetch('/api/admin/jobs-run', {
+      const res = await authedFetch('/api/admin/jobs-run', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(id ? { id } : {}),
       })
       const json = await res.json()
@@ -143,9 +150,8 @@ export default function AdminJobsPage() {
   async function saveJob() {
     setMsg(null)
     try {
-      const res = await fetch('/api/admin/jobs-upsert', {
+      const res = await authedFetch('/api/admin/jobs-upsert', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, published_at: new Date().toISOString(), visible: false }),
       })
       const json = await res.json()
@@ -160,9 +166,8 @@ export default function AdminJobsPage() {
 
   async function toggleVisible(id: string, current: boolean) {
     try {
-      const res = await fetch('/api/admin/jobs-toggle-visible', {
+      const res = await authedFetch('/api/admin/jobs-toggle-visible', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, visible: !current }),
       })
       const json = await res.json()
@@ -178,9 +183,8 @@ export default function AdminJobsPage() {
     const ids = Object.entries(selected).filter(([, v]) => v).map(([id]) => id)
     if (ids.length === 0) return
     try {
-      const res = await fetch('/api/admin/jobs-bulk-publish', {
+      const res = await authedFetch('/api/admin/jobs-bulk-publish', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids }),
       })
       const json = await res.json()
