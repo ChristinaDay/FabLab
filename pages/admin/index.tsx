@@ -1,5 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '@/lib/db'
+// Ensure admin API requests include the Supabase session token in production
+async function authedFetch(input: RequestInfo | URL, init?: RequestInit) {
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token
+  const headers = {
+    ...(init?.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    'Content-Type': 'application/json',
+  } as Record<string, string>
+  return fetch(input, { ...(init || {}), headers })
+}
 import Nav from '@/components/Nav'
 
 type Item = {
@@ -55,16 +66,7 @@ export default function AdminPage() {
     })
   }, [])
 
-  async function authedFetch(input: RequestInfo | URL, init?: RequestInit) {
-    const { data: { session } } = await supabase.auth.getSession()
-    const token = session?.access_token
-    const headers = {
-      ...(init?.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      'Content-Type': 'application/json',
-    } as Record<string, string>
-    return fetch(input, { ...(init || {}), headers })
-  }
+  // (helper defined at module scope for use in child components)
 
   async function fetchItems() {
     setLoading(true)
