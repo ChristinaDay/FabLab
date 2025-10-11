@@ -118,13 +118,12 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
             <a href="/topstories" className="text-sm underline">All top stories</a>
           </div>
 
+
           {/* Center two‑column grid of story cards */}
           <section className="py-8">
             <div className="grid grid-cols-12 gap-6">
               <div className="col-span-12 md:col-span-8 md:col-start-3 lg:col-span-6 lg:col-start-4">
-                <div className="border-t border-black/20 dark:border-white/20 mb-4 flex items-center justify-between">
-                  <a href="/topstories" className="text-sm underline ml-auto">All top stories</a>
-                </div>
+                <div className="border-t border-black/20 dark:border-white/20 mb-4" />
                 <div className="badge-dark mb-3 inline-block">More Stories</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   {centerGrid.map((it: any) => (
