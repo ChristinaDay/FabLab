@@ -10,6 +10,8 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
   const recent = restItems.slice(3, 10)
   const centerSecondaries = mainOther // highlight additional main stories under the hero
   const centerGrid = restItems.slice(0, 8)
+  const latestList = restItems.slice(21, 33)
+  const quickReads = restItems.slice(latestList.length ? 33 : 21, latestList.length ? 41 : 29)
 
   return (
     <>
@@ -142,41 +144,45 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
             </div>
           </section>
 
-          {/* Divider */}
-          <div className="separator my-6" />
+          {latestList.length > 0 && (
+            <>
+              {/* Divider */}
+              <div className="separator my-6" />
 
-          {/* Secondary sections */}
-          <section className="section">
-            <div className="grid grid-cols-12 gap-6">
-              <div className="col-span-12 space-y-6">
-                {restItems.slice(21, 33).map((item: any) => (
-                  <article key={item.id} className="grid grid-cols-12 gap-4 pb-6 border-b last:border-b-0">
-                    {item.thumbnail ? (
-                      <img src={item.thumbnail} alt={item.title} className="col-span-4 md:col-span-3 w-full h-28 object-cover" />
-                    ) : null}
-                    <div className={item.thumbnail ? 'col-span-8 md:col-span-9' : 'col-span-12'}>
-                      <a href={item.link} target="_blank" rel="noreferrer" className="block font-semibold hover:underline">
-                        {item.title}
-                      </a>
-                      {item.excerpt ? (
-                        <p className="text-sm mt-1">{item.excerpt.slice(0, 180)}...</p>
-                      ) : null}
-                      <div className="text-[11px] text-gray-500 mt-1">{item.source} • {new Date(item.published_at).toLocaleDateString()}</div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </div>
-          </section>
+              {/* Secondary sections */}
+              <section className="section">
+                <div className="grid grid-cols-12 gap-6">
+                  <div className="col-span-12 space-y-6">
+                    {latestList.map((item: any) => (
+                      <article key={item.id} className="grid grid-cols-12 gap-4 pb-6 border-b last:border-b-0">
+                        {item.thumbnail ? (
+                          <img src={item.thumbnail} alt={item.title} className="col-span-4 md:col-span-3 w-full h-28 object-cover" />
+                        ) : null}
+                        <div className={item.thumbnail ? 'col-span-8 md:col-span-9' : 'col-span-12'}>
+                          <a href={item.link} target="_blank" rel="noreferrer" className="block font-semibold hover:underline">
+                            {item.title}
+                          </a>
+                          {item.excerpt ? (
+                            <p className="text-sm mt-1">{item.excerpt.slice(0, 180)}...</p>
+                          ) : null}
+                          <div className="text-[11px] text-gray-500 mt-1">{item.source} • {new Date(item.published_at).toLocaleDateString()}</div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              </section>
 
-          {/* Divider */}
-          <div className="separator my-6" />
+              {/* Divider */}
+              <div className="separator my-6" />
+            </>
+          )}
 
           {/* Knowledge bites */}
           <section className="section">
             <div className="badge-dark mb-4 inline-block">Quick Reads</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {restItems.slice(33, 41).map((item: any) => (
+              {quickReads.map((item: any) => (
                 <a key={item.id} href={item.link} target="_blank" rel="noreferrer" className="block border p-3 hover:bg-black/5">
                   <div className="text-sm font-semibold leading-snug">{item.title}</div>
                   <div className="text-[11px] text-gray-500 mt-1">{item.source}</div>
