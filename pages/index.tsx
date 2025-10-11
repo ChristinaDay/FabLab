@@ -66,7 +66,7 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
                   <div className="text-xs uppercase tracking-wide text-black/70 mb-2">
                     {it.source ? `From ${it.source}` : 'From around the web'}
                   </div>
-                  <a href={it.link} target="_blank" rel="noreferrer" className="block headline-condensed font-condensed leading-tight text-[2.2rem] sm:text-[3rem] md:text-[3.5rem]">
+                  <a href={it.link} target="_blank" rel="noreferrer" className="block font-condensed uppercase tracking-tight leading-tight text-[2.2rem] sm:text-[3rem] md:text-[3.5rem]">
                     {it.title}
                   </a>
                   <div className="text-xs text-gray-500 mt-2">{it.source ? `${it.source} • ` : ''}{new Date(it.published_at).toLocaleDateString()}</div>
