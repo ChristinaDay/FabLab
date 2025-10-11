@@ -52,7 +52,7 @@ export default function AdminPage() {
   const [addMsg, setAddMsg] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<'published_at'|'source'|'title'>('published_at')
   const [sortDir, setSortDir] = useState<'desc'|'asc'>('desc')
-  const [groupBy, setGroupBy] = useState<'none'|'date'|'source'|'topic'>('none')
+  const [groupBy, setGroupBy] = useState<'none'|'date'|'source'|'topic'|'visibility'>('none')
 
   useEffect(() => {
     let unsub: { unsubscribe: () => void } | null = null
@@ -392,6 +392,7 @@ export default function AdminPage() {
             <option value="date">Date</option>
             <option value="source">Source</option>
             <option value="topic">Topic</option>
+            <option value="visibility">Visibility</option>
           </select>
         </label>
       </div>
@@ -410,7 +411,7 @@ type AdminItemsListProps = {
   items: Item[]
   sortBy: 'published_at'|'source'|'title'
   sortDir: 'asc'|'desc'
-  groupBy: 'none'|'date'|'source'|'topic'
+  groupBy: 'none'|'date'|'source'|'topic'|'visibility'
   onToggleVisible: (id: string, current: boolean) => void
 }
 
@@ -448,6 +449,7 @@ function AdminItemsList({ items, sortBy, sortDir, groupBy, onToggleVisible }: Ad
     if (groupBy === 'date') key = (it.published_at || '').slice(0, 10) || 'Unknown date'
     else if (groupBy === 'source') key = it.source || 'Unknown source'
     else if (groupBy === 'topic') key = (it.tags && it.tags[0]) || 'Untagged'
+    else if (groupBy === 'visibility') key = it.visible ? 'Published' : 'Unpublished'
     if (!groups[key]) groups[key] = []
     groups[key].push(it)
   }
