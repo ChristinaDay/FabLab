@@ -52,7 +52,7 @@ export default function Nav() {
 
         <nav className="hidden md:flex items-center gap-6 text-sm font-semibold">
           <a href="/" className={`${isActive('/') ? 'text-black' : 'text-black/70 hover:text-black'}`}>Home</a>
-          <a href="/jobs" className={`${isActive('/jobs') ? 'text-black' : 'text-black/70 hover:text-black'}`}>Jobs</a>
+          <a href="/jobs" className={`${isActive('/jobs') ? 'text-black' : 'text-black/70 hover:text-black'}`}>Job Board</a>
           <span suppressHydrationWarning>
           {hydrated && userEmail ? (
             <div className="relative">
@@ -94,7 +94,7 @@ export default function Nav() {
         <div className="md:hidden border-t">
           <div className="px-4 py-3 grid gap-2 text-sm font-semibold">
             <a href="/" className={`${isActive('/') ? 'text-black' : 'text-black/70'}`}>Home</a>
-            <a href="/jobs" className={`${isActive('/jobs') ? 'text-black' : 'text-black/70'}`}>Jobs</a>
+            <a href="/jobs" className={`${isActive('/jobs') ? 'text-black' : 'text-black/70'}`}>Job Board</a>
             {userEmail ? (
               <>
                 <div className="text-black/80 mt-2">{userEmail}</div>
@@ -211,7 +211,6 @@ export default function Nav() {
             <a href="/?category=design" className={`whitespace-nowrap py-3 ${router.query.category === 'design' ? 'text-black font-semibold border-b-2 border-black' : 'text-black/70 hover:text-black border-b-2 border-transparent'}`}>Design</a>
             <a href="/?category=tools" className={`whitespace-nowrap py-3 ${router.query.category === 'tools' ? 'text-black font-semibold border-b-2 border-black' : 'text-black/70 hover:text-black border-b-2 border-transparent'}`}>Tools</a>
             <a href="/?category=materials" className={`whitespace-nowrap py-3 ${router.query.category === 'materials' ? 'text-black font-semibold border-b-2 border-black' : 'text-black/70 hover:text-black border-b-2 border-transparent'}`}>Materials</a>
-            <a href="/jobs" className={`whitespace-nowrap py-3 ${isActive('/jobs') ? 'text-black font-semibold border-b-2 border-black' : 'text-black/70 hover:text-black border-b-2 border-transparent'}`}>Jobs</a>
             <a href="/?category=guides" className={`whitespace-nowrap py-3 ${router.query.category === 'guides' ? 'text-black font-semibold border-b-2 border-black' : 'text-black/70 hover:text-black border-b-2 border-transparent'}`}>Guides</a>
           </nav>
         </div>

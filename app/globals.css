@@ -39,3 +39,13 @@ p { color: #6b7280; }
 .btn:hover { background: rgba(0,0,0,.05); }
 .headline-condensed { text-transform:uppercase; letter-spacing:.02em; font-weight:900; }
 .logo-wired .box { display:inline-block; border:2px solid #111; background:#111; color:#fff; padding:0 .25rem; margin-right:.2rem; font-weight:900; }
+.section { padding-top:2rem; padding-bottom:2rem; }
+.section + .section { border-top:1px solid rgba(0,0,0,.12); }
+.separator { height:1px; background:rgba(0,0,0,.12); }
+.subtle-rule { border-top:1px solid rgba(0,0,0,.12); }
+
+@media (prefers-color-scheme: dark) {
+  .section + .section { border-top:1px solid rgba(255,255,255,.15); }
+  .separator { background:rgba(255,255,255,.18); }
+  .subtle-rule { border-top:1px solid rgba(255,255,255,.15); }
+}

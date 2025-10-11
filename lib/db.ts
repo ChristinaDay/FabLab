@@ -14,6 +14,8 @@ export type UpsertItem = {
   published_at?: string | Date | null
   tags?: string[]
   curated_note?: string
+  featured_rank?: number | null
+  pick_rank?: number | null
 }
 
 // upsert item - avoid duplicates by link
@@ -45,6 +47,58 @@ export async function fetchVisibleItems(limit = 50) {
     .limit(limit)
   if (error) throw error
   return data
+}
+
+// Homepage helpers
+export async function fetchFeatured(limit = 5) {
+  const { data, error } = await supabase
+    .from('items')
+    .select('*')
+    .eq('visible', true)
+    .not('featured_rank', 'is', null)
+    .order('featured_rank', { ascending: true })
+    .order('published_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return data
+}
+
+export async function fetchPicks(limit = 6) {
+  const { data, error } = await supabase
+    .from('items')
+    .select('*')
+    .eq('visible', true)
+    .not('pick_rank', 'is', null)
+    .order('pick_rank', { ascending: true })
+    .order('published_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return data
+}
+
+export async function fetchRecentExcluding({ limit = 30, excludeIds = [] as string[] }) {
+  const { data, error } = await supabase
+    .from('items')
+    .select('*')
+    .eq('visible', true)
+    .order('published_at', { ascending: false })
+    .limit(limit * 2) // overfetch then filter client-side to respect exclusions
+  if (error) throw error
+  const exclude = new Set(excludeIds)
+  const filtered = (data || []).filter((d) => !exclude.has((d as any).id)).slice(0, limit)
+  return filtered
+}
+
+export async function fetchByTagExcluding({ tag, limit = 12, excludeIds = [] as string[] }: { tag: string; limit?: number; excludeIds?: string[] }) {
+  let query = supabase
+    .from('items')
+    .select('*') as any
+  query = query.eq('visible', true).contains('tags', [tag]).order('published_at', { ascending: false }).limit(limit * 2)
+  const { data, error } = await query
+  if (error) throw error
+  const exclude = new Set(excludeIds)
+  const filtered = (data || []).filter((d) => !exclude.has((d as any).id)).slice(0, limit)
+  return filtered
 }
 
 // Filtered items by category (matches tags array)

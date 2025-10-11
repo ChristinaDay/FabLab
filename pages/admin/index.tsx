@@ -12,6 +12,8 @@ type Item = {
   published_at?: string
   visible?: boolean
   tags?: string[]
+  featured_rank?: number | null
+  pick_rank?: number | null
 }
 
 export default function AdminPage() {
@@ -444,6 +446,8 @@ function AdminItemRow({ it, onToggleVisible }: { it: Item; onToggleVisible: (id:
   ]
   const [tags, setTags] = React.useState<string[]>(Array.isArray(it.tags) ? it.tags : [])
   const [saving, setSaving] = React.useState(false)
+  const [fRank, setFRank] = React.useState<string>(it.featured_rank == null ? '' : String(it.featured_rank))
+  const [pRank, setPRank] = React.useState<string>(it.pick_rank == null ? '' : String(it.pick_rank))
 
   async function saveTags() {
     setSaving(true)
@@ -460,6 +464,23 @@ function AdminItemRow({ it, onToggleVisible }: { it: Item; onToggleVisible: (id:
       console.error(e)
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function saveCuration() {
+    try {
+      const featured_rank = fRank.trim() === '' ? null : Number(fRank)
+      const pick_rank = pRank.trim() === '' ? null : Number(pRank)
+      const res = await fetch('/api/admin/items-update-curation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: it.id, featured_rank, pick_rank }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.detail || json.error || 'Failed to save curation')
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e)
     }
   }
 
@@ -490,6 +511,17 @@ function AdminItemRow({ it, onToggleVisible }: { it: Item; onToggleVisible: (id:
             </button>
           </div>
         </details>
+        <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs items-center">
+          <label className="flex items-center gap-1">
+            <span className="text-gray-600">Featured rank</span>
+            <input value={fRank} onChange={(e) => setFRank(e.target.value)} placeholder="" className="w-16 border rounded px-2 py-1" />
+          </label>
+          <label className="flex items-center gap-1">
+            <span className="text-gray-600">Pick rank</span>
+            <input value={pRank} onChange={(e) => setPRank(e.target.value)} placeholder="" className="w-16 border rounded px-2 py-1" />
+          </label>
+          <button onClick={saveCuration} className="px-2 py-1 rounded border hover:bg-gray-50">Save curation</button>
+        </div>
       </div>
       <div>
         <button
