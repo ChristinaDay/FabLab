@@ -38,6 +38,7 @@ p { color: #6b7280; }
 .btn { background:#fff; color:#111; border:1px solid rgba(0,0,0,.5); }
 .btn:hover { background: rgba(0,0,0,.05); }
 .headline-condensed { text-transform:uppercase; letter-spacing:.02em; font-weight:900; }
+.font-condensed { font-family: var(--font-condensed), Arial, Helvetica, sans-serif; }
 .logo-wired .box { display:inline-block; border:2px solid #111; background:#111; color:#fff; padding:0 .25rem; margin-right:.2rem; font-weight:900; }
 .section { padding-top:2rem; padding-bottom:2rem; }
 .section + .section { border-top:1px solid rgba(0,0,0,.12); }
