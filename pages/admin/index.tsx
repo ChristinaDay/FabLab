@@ -476,9 +476,8 @@ function AdminItemRow({ it, onToggleVisible }: { it: Item; onToggleVisible: (id:
     try {
       const featured_rank = fRank.trim() === '' ? null : Number(fRank)
       const pick_rank = pRank.trim() === '' ? null : Number(pRank)
-      const res = await fetch('/api/admin/items-update-curation', {
+      const res = await authedFetch('/api/admin/items-update-curation', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: it.id, featured_rank, pick_rank }),
       })
       const json = await res.json()
