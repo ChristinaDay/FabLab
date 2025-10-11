@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ShopTalk",
   description: "News and jobs for makers and fabricators",
+  icons: "/globe.svg",
 };
 
 export default function RootLayout({
