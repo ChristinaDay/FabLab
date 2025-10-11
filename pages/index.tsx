@@ -26,7 +26,7 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
           <>
           <div className="grid grid-cols-12 gap-6 section">
             {/* Left: Today's Picks */}
-            <aside className="col-span-12 md:col-span-4 lg:col-span-3">
+            <aside className="col-span-12 md:col-span-4 lg:col-span-3 order-2 md:order-none">
               <div className="badge-dark mb-3 inline-block">Today's Picks</div>
               <div className="space-y-6">
                 {picks.map((item: any) => (
@@ -60,7 +60,7 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
             </aside>
 
             {/* Center: Three stacked feature stories (The Fabricator style) */}
-            <section className="col-span-12 md:col-span-8 lg:col-span-6">
+            <section className="col-span-12 md:col-span-8 lg:col-span-6 order-1 md:order-none">
               {mainStories.map((it: any, idx: number) => (
                 <article key={it.id} className={`pb-8 ${idx < mainStories.length - 1 ? 'border-b mb-8' : ''}`}>
                   <div className="text-xs uppercase tracking-wide text-black/70 mb-2">
@@ -82,7 +82,7 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
             </section>
 
             {/* Right: Most Recent */}
-            <aside className="col-span-12 lg:col-span-3">
+            <aside className="col-span-12 lg:col-span-3 order-3 md:order-none">
               <div className="badge-dark mb-3 inline-block">Most Recent</div>
               <div className="space-y-5">
                 {recent.map((item: any) => (
