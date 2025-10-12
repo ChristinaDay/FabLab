@@ -3,6 +3,7 @@ import '../app/globals.css'
 import { useEffect } from 'react'
 import { supabase } from '@/lib/db'
 import { Oswald } from 'next/font/google'
+import Footer from '@/components/Footer'
 
 const oswald = Oswald({
   variable: '--font-condensed',
@@ -18,6 +19,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
   return (
     <div className={oswald.variable}>
       <Component {...pageProps} />
+      <Footer />
     </div>
   )
 }

@@ -205,18 +205,7 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
           </>
         )}
       </main>
-      <footer className="mt-10 border-t">
-        <div className="max-w-7xl mx-auto px-6 py-8 text-sm text-black/70 dark:text-white/70 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-          <div>
-            © {new Date().getFullYear()} ShopTalk. Curated news and jobs for makers and fabricators.
-          </div>
-          <div className="flex gap-4">
-            <a href="/topstories" className="underline text-black dark:text-white">Top Stories</a>
-            <a href="/jobs" className="underline text-black dark:text-white">Jobs</a>
-            <a href="/admin" className="underline text-black dark:text-white">Admin</a>
-          </div>
-        </div>
-      </footer>
+      {/* Footer now provided globally via _app.tsx */}
     </>
   )
 }
