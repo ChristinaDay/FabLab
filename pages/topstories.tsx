@@ -52,6 +52,25 @@ export default function TopStoriesPage({ items, jobs, recent }: { items: any[]; 
                   </article>
                 ))}
               </div>
+              {/* From Social */}
+              <div className="mt-10">
+                <div className="badge-dark mb-3 inline-block">From Social</div>
+                <div className="space-y-5">
+                  {recent.filter((i: any) => Array.isArray(i.tags) && i.tags.includes('social')).slice(0,8).map((item: any) => (
+                    <article key={`social-${item.id}`} className="grid grid-cols-5 gap-3 items-start">
+                      {item.thumbnail && (
+                        <img src={item.thumbnail} alt={item.title} className="col-span-2 w-full h-16 object-cover" />
+                      )}
+                      <div className={item.thumbnail ? 'col-span-3' : 'col-span-5'}>
+                        <a href={item.link} target="_blank" rel="noreferrer" className="block text-sm font-semibold leading-snug hover:underline">
+                          {item.title}
+                        </a>
+                        <div className="text-[11px] text-gray-500 mt-1">{new Date(item.published_at).toLocaleDateString()}</div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
               <div className="mt-10">
                 <div className="badge-dark mb-3 inline-block">Latest Jobs</div>
                 <div className="space-y-4">

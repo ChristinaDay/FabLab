@@ -53,6 +53,10 @@ export default function AdminPage() {
   const [sortBy, setSortBy] = useState<'published_at'|'source'|'title'>('published_at')
   const [sortDir, setSortDir] = useState<'desc'|'asc'>('desc')
   const [groupBy, setGroupBy] = useState<'none'|'date'|'source'|'topic'|'visibility'>('none')
+  const [addUrl, setAddUrl] = useState('')
+  const [preview, setPreview] = useState<any | null>(null)
+  const [previewMsg, setPreviewMsg] = useState<string | null>(null)
+  const [publishTags, setPublishTags] = useState<string[]>([])
 
   useEffect(() => {
     let unsub: { unsubscribe: () => void } | null = null
@@ -107,6 +111,41 @@ export default function AdminPage() {
       console.error(e)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function previewOg() {
+    setPreview(null)
+    setPreviewMsg(null)
+    const url = addUrl.trim()
+    if (!url) return
+    try {
+      const res = await authedFetch(`/api/admin/preview-og?url=${encodeURIComponent(url)}`)
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.detail || json.error || 'Failed to preview')
+      setPreview(json.meta)
+      if (!json.meta) setPreviewMsg('No metadata found')
+    } catch (e: any) {
+      setPreviewMsg(e.message || 'Failed to preview')
+    }
+  }
+
+  async function publishFromUrl() {
+    const url = addUrl.trim()
+    if (!url) return
+    try {
+      const res = await authedFetch('/api/admin/items-upsert-from-url', {
+        method: 'POST',
+        body: JSON.stringify({ url, tags: publishTags, visible: true })
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.detail || json.error || 'Failed to publish')
+      setAddUrl('')
+      setPreview(null)
+      setPublishTags([])
+      fetchItems()
+    } catch (e: any) {
+      setPreviewMsg(e.message || 'Failed to publish')
     }
   }
 
@@ -338,6 +377,37 @@ export default function AdminPage() {
           <button onClick={runBackfill} className="px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700" disabled={!bfTag}>Run backfill</button>
           {bfMsg ? <div className="text-sm text-gray-700">{bfMsg}</div> : null}
         </div>
+      </div>
+
+      {/* Add by URL (social or any share link) */}
+      <div className="mb-8 space-y-2 border rounded p-4">
+        <div className="font-medium">Add content by URL (Instagram, Facebook, any link)</div>
+        <div className="flex flex-wrap gap-2 items-center">
+          <input className="flex-1 border rounded px-3 py-2" placeholder="Paste share URL (https://...)" value={addUrl} onChange={(e) => setAddUrl(e.target.value)} />
+          <button onClick={previewOg} className="px-3 py-2 rounded border hover:bg-gray-50">Preview</button>
+          <button onClick={publishFromUrl} className="px-3 py-2 rounded bg-green-600 text-white hover:bg-green-700" disabled={!addUrl.trim()}>Publish</button>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs">
+          {TAGS.map((t) => (
+            <label key={t.key} className="flex items-center gap-1 border rounded px-2 py-1">
+              <input
+                type="checkbox"
+                checked={publishTags.includes(t.key)}
+                onChange={(e) => setPublishTags((prev) => e.target.checked ? [...prev, t.key] : prev.filter((x) => x !== t.key))}
+              />
+              {t.label}
+            </label>
+          ))}
+        </div>
+        {preview ? (
+          <div className="mt-3 p-3 border rounded">
+            <div className="text-xs uppercase tracking-wide text-black/70">{preview.siteName}</div>
+            <div className="font-semibold">{preview.title}</div>
+            {preview.image ? <img src={preview.image} alt="" className="w-full max-w-md h-40 object-cover mt-2" /> : null}
+            {preview.description ? <p className="text-sm mt-2">{preview.description}</p> : null}
+          </div>
+        ) : null}
+        {previewMsg ? <div className="text-sm text-gray-700">{previewMsg}</div> : null}
       </div>
 
       {/* Add individual item */}
