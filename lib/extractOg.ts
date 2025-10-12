@@ -129,8 +129,19 @@ export async function extractOpenGraph(targetUrl: string): Promise<OpenGraphMeta
 
     // 2) As a last resort, try reader fallback to extract one good image
     if (!meta.image) {
-      const readerImg = await tryReaderFallbackForImage(targetUrl)
-      if (readerImg) meta.image = readerImg
+      // Instagram-specific: try ddinstagram proxy which exposes media OG tags publicly
+      if (hostname.includes('instagram.com')) {
+        const dd = await tryDdInstagramFallback(targetUrl)
+        if (dd?.image) {
+          meta.image = dd.image
+          meta.title = meta.title || dd.title
+          meta.siteName = meta.siteName || dd.siteName
+        }
+      }
+      if (!meta.image) {
+        const readerImg = await tryReaderFallbackForImage(targetUrl)
+        if (readerImg) meta.image = readerImg
+      }
     }
     return meta
   } catch {
@@ -189,6 +200,30 @@ async function tryReaderFallbackForImage(url: string): Promise<string | null> {
     const html = await resp.text()
     const m = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i)
     return m ? toAbsoluteUrl(m[1], url) : null
+  } catch {
+    return null
+  }
+}
+
+async function tryDdInstagramFallback(url: string): Promise<OpenGraphMeta | null> {
+  try {
+    // ddinstagram redirects IG URLs to a public OG-friendly page
+    const ig = new URL(url)
+    const proxied = `https://ddinstagram.com${ig.pathname}`
+    const resp = await fetch(proxied, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+    if (!resp.ok) return null
+    const html = await resp.text()
+    const title = html.match(/<meta[^>]+property=["']og:title["'][^>]*content=["']([^"']+)["']/i)?.[1] || null
+    const image = html.match(/<meta[^>]+property=["']og:image["'][^>]*content=["']([^"']+)["']/i)?.[1] || null
+    return {
+      title,
+      description: null,
+      image: image || null,
+      siteName: 'Instagram',
+      canonicalUrl: null,
+      publishedTime: null,
+      author: null,
+    }
   } catch {
     return null
   }
