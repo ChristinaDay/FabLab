@@ -1,5 +1,8 @@
 import React from 'react'
 import Nav from '@/components/Nav'
+import dynamic from 'next/dynamic'
+const BookmarkButton = dynamic(() => import('@/components/BookmarkButton'), { ssr: false })
+const LikeButton = dynamic(() => import('@/components/LikeButton'), { ssr: false })
 import { fetchVisibleItemsFiltered, fetchFeatured, fetchPicks, fetchRecentExcluding, fetchByTagExcluding, fetchVisibleJobs } from '@/lib/db'
 
 export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
@@ -70,8 +73,12 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
                     {it.title}
                   </a>
                   <div className="text-xs text-gray-500 mt-2">{it.source ? `${it.source} • ` : ''}{new Date(it.published_at).toLocaleDateString()}</div>
+                  <div className="mt-2 flex items-center justify-between">
+                    <LikeButton itemId={it.id} />
+                    <BookmarkButton itemId={it.id} />
+                  </div>
                   {it.thumbnail ? (
-                    <img src={it.thumbnail} alt={it.title} className="w-full h-[420px] object-cover mt-4" />
+                    <img src={it.thumbnail} alt={it.title} className="w-full h-[420px] object-cover mt-3" />
                   ) : null}
                   {it.excerpt ? (
                     <p className="text-gray-500 mt-4">{it.excerpt.slice(0, 240)}...</p>
@@ -129,7 +136,11 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
                 <div className="badge-dark mb-3 inline-block">More Stories</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   {centerGrid.map((it: any) => (
-                    <article key={it.id} className="border p-3 hover:bg-black/5">
+                    <article key={it.id} className="border p-3 hover:bg-black/5 flex flex-col h-full">
+                      <div className="mb-2 flex items-center justify-between">
+                        <LikeButton itemId={it.id} />
+                        <BookmarkButton itemId={it.id} />
+                      </div>
                       {it.thumbnail ? (
                         <img src={it.thumbnail} alt={it.title} className="w-full h-36 object-cover mb-3" />
                       ) : null}
