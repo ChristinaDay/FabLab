@@ -64,6 +64,19 @@ export type OpenGraphMeta = {
 export async function extractOpenGraph(targetUrl: string): Promise<OpenGraphMeta | null> {
   if (!targetUrl) return null
   try {
+    const urlObj = new URL(targetUrl)
+    const hostname = urlObj.hostname.replace(/^www\./, '')
+
+    // 1) Platform-specific fallbacks first (often more reliable than raw HTML)
+    if (hostname.includes('instagram.com')) {
+      const ig = await tryInstagramOEmbed(targetUrl)
+      if (ig) return ig
+    }
+    if (hostname.includes('facebook.com')) {
+      const fb = await tryFacebookOEmbed(targetUrl)
+      if (fb) return fb
+    }
+
     const origin = new URL(targetUrl).origin
     const resp = await fetch(targetUrl, {
       headers: {
@@ -104,7 +117,7 @@ export async function extractOpenGraph(targetUrl: string): Promise<OpenGraphMeta
       image = m ? toAbsoluteUrl(m[1], targetUrl) : null
     }
 
-    return {
+    let meta: OpenGraphMeta = {
       title,
       description: ogDesc || null,
       image: image || null,
@@ -113,6 +126,69 @@ export async function extractOpenGraph(targetUrl: string): Promise<OpenGraphMeta
       publishedTime: published || null,
       author: author || null,
     }
+
+    // 2) As a last resort, try reader fallback to extract one good image
+    if (!meta.image) {
+      const readerImg = await tryReaderFallbackForImage(targetUrl)
+      if (readerImg) meta.image = readerImg
+    }
+    return meta
+  } catch {
+    return null
+  }
+}
+
+async function tryInstagramOEmbed(url: string): Promise<OpenGraphMeta | null> {
+  try {
+    const api = `https://www.instagram.com/oembed/?omitscript=true&url=${encodeURIComponent(url)}`
+    const resp = await fetch(api, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+    if (!resp.ok) return null
+    const data = await resp.json()
+    const image = (data.thumbnail_url as string | undefined) || null
+    return {
+      title: (data.title as string | undefined) || null,
+      description: null,
+      image,
+      siteName: 'Instagram',
+      canonicalUrl: (data.author_url as string | undefined) ? null : null,
+      publishedTime: null,
+      author: (data.author_name as string | undefined) || null,
+    }
+  } catch {
+    return null
+  }
+}
+
+async function tryFacebookOEmbed(url: string): Promise<OpenGraphMeta | null> {
+  try {
+    const api = `https://www.facebook.com/plugins/post/oembed.json/?url=${encodeURIComponent(url)}`
+    const resp = await fetch(api, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+    if (!resp.ok) return null
+    const data = await resp.json()
+    // Facebook oEmbed doesn't always include a thumbnail; still useful for title/author
+    return {
+      title: (data.title as string | undefined) || null,
+      description: null,
+      image: null,
+      siteName: 'Facebook',
+      canonicalUrl: null,
+      publishedTime: null,
+      author: (data.author_name as string | undefined) || null,
+    }
+  } catch {
+    return null
+  }
+}
+
+async function tryReaderFallbackForImage(url: string): Promise<string | null> {
+  try {
+    // Jina AI reader fetches the page and returns simplified HTML, often bypassing bot blocks
+    const reader = `https://r.jina.ai/http://` + url.replace(/^https?:\/\//, '')
+    const resp = await fetch(reader, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+    if (!resp.ok) return null
+    const html = await resp.text()
+    const m = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i)
+    return m ? toAbsoluteUrl(m[1], url) : null
   } catch {
     return null
   }
