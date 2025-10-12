@@ -67,6 +67,7 @@ export default function Nav() {
               {accountOpen ? (
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-black/20 rounded shadow-lg text-sm">
                   <div className="px-3 py-2 text-black/80 truncate" title={userEmail || ''}>{userEmail}</div>
+                  <a href="/dashboard" className="block px-3 py-2 text-black hover:bg-black/5">Dashboard</a>
                   <a href="/admin" className="block px-3 py-2 text-black hover:bg-black/5">Admin</a>
                   <a href="/admin/jobs" className="block px-3 py-2 text-black hover:bg-black/5">Admin Jobs</a>
                   <button onClick={onSignOut} className="w-full text-left px-3 py-2 text-black hover:bg-black/5">Sign out</button>
