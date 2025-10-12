@@ -61,3 +61,26 @@ psql "$SUPABASE_DB_URL" -f scripts/sql/homepage_curation.sql
 ```
 
 After migrating, go to `/admin` and set ranks per item.
+
+## Admin: Add content by URL (Instagram, Facebook, any link)
+
+You can publish items directly from share URLs. This works for Instagram posts, Facebook posts, and regular articles.
+
+How it works:
+
+- The admin UI calls `GET /api/admin/preview-og?url=...` to fetch Open Graph metadata (title, description, image, site name, canonical URL, published time when available).
+- Publishing calls `POST /api/admin/items-upsert-from-url` which upserts an `items` row using that metadata, auto‑tagging `social` and the platform tag (`instagram` or `facebook`) when applicable, and publishes visible by default.
+
+Usage:
+
+1. Visit `/admin` → “Add content by URL”.
+2. Paste a share URL (e.g. `https://www.instagram.com/p/...` or `https://www.facebook.com/.../posts/...`).
+3. Click Preview to verify the title/thumbnail.
+4. Optionally select category tags (e.g., Industrial Design).
+5. Click Publish. The item appears in Admin, Home → “From Social” sidebar, and Top Stories → sidebar.
+
+Notes:
+
+- Some pages block scrapers; if the image doesn’t resolve, the post still publishes with title/description.
+- We link out rather than embed; thumbnails come from OG image or first image in the page.
+- Canonical URL is used when provided by the page metadata.
