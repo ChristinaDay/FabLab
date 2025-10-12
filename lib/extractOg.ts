@@ -210,11 +210,24 @@ async function tryDdInstagramFallback(url: string): Promise<OpenGraphMeta | null
     // ddinstagram redirects IG URLs to a public OG-friendly page
     const ig = new URL(url)
     const proxied = `https://ddinstagram.com${ig.pathname}`
-    const resp = await fetch(proxied, { headers: { 'User-Agent': 'Mozilla/5.0' } })
-    if (!resp.ok) return null
-    const html = await resp.text()
+    let resp = await fetch(proxied, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+    let html = ''
+    if (resp.ok) {
+      html = await resp.text()
+    } else {
+      // Try reader proxy of ddinstagram as a fallback
+      const readerUrl = `https://r.jina.ai/http://ddinstagram.com${ig.pathname}`
+      const r = await fetch(readerUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+      if (!r.ok) return null
+      html = await r.text()
+    }
     const title = html.match(/<meta[^>]+property=["']og:title["'][^>]*content=["']([^"']+)["']/i)?.[1] || null
-    const image = html.match(/<meta[^>]+property=["']og:image["'][^>]*content=["']([^"']+)["']/i)?.[1] || null
+    let image = html.match(/<meta[^>]+property=["']og:image["'][^>]*content=["']([^"']+)["']/i)?.[1] || null
+    if (!image) {
+      // Fallback to first <img>
+      const m = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i)
+      image = m?.[1] || null
+    }
     return {
       title,
       description: null,
