@@ -20,6 +20,7 @@ export default function Footer() {
             <a href="/" className="underline">Home</a>
             <a href="/jobs" className="underline">Job Board</a>
             <a href="/topstories" className="underline">Top Stories</a>
+            <a href="/privacy" className="underline">Privacy</a>
           </div>
         </div>
         <div className="lg:col-span-2">
