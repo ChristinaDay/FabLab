@@ -78,7 +78,10 @@ export async function extractOpenGraph(targetUrl: string): Promise<OpenGraphMeta
     }
 
     const origin = new URL(targetUrl).origin
-    const resp = await fetch(targetUrl, {
+    let html = ''
+    let resp: Response | null = null
+    try {
+      resp = await fetch(targetUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -86,8 +89,12 @@ export async function extractOpenGraph(targetUrl: string): Promise<OpenGraphMeta
         'Referer': origin,
       },
     })
-    if (!resp.ok) return null
-    const html = await resp.text()
+      if (resp.ok) {
+        html = await resp.text()
+      }
+    } catch {
+      // ignore fetch error; we'll try fallbacks below
+    }
 
     function getMetaBy(attr: 'property'|'name', name: string): string | null {
       const re = new RegExp(`<meta[^>]+${attr}=["']${name}["'][^>]*>`, 'i')
@@ -97,13 +104,13 @@ export async function extractOpenGraph(targetUrl: string): Promise<OpenGraphMeta
       return content || null
     }
 
-    const ogTitle = getMetaBy('property', 'og:title') || getMetaBy('name', 'twitter:title')
-    const ogDesc = getMetaBy('property', 'og:description') || getMetaBy('name', 'twitter:description')
-    const ogImage = getMetaBy('property', 'og:image:secure_url') || getMetaBy('property', 'og:image') || getMetaBy('name', 'twitter:image:src') || getMetaBy('name', 'twitter:image')
-    const siteName = getMetaBy('property', 'og:site_name')
-    const canonical = getMetaBy('property', 'og:url') || html.match(/<link[^>]+rel=["']canonical["'][^>]*>/i)?.[0]?.match(/href=["']([^"']+)["']/i)?.[1] || null
-    const published = getMetaBy('property', 'article:published_time')
-    const author = getMetaBy('property', 'article:author') || getMetaBy('name', 'author')
+    const ogTitle = html ? (getMetaBy('property', 'og:title') || getMetaBy('name', 'twitter:title')) : null
+    const ogDesc = html ? (getMetaBy('property', 'og:description') || getMetaBy('name', 'twitter:description')) : null
+    const ogImage = html ? (getMetaBy('property', 'og:image:secure_url') || getMetaBy('property', 'og:image') || getMetaBy('name', 'twitter:image:src') || getMetaBy('name', 'twitter:image')) : null
+    const siteName = html ? getMetaBy('property', 'og:site_name') : null
+    const canonical = html ? (getMetaBy('property', 'og:url') || html.match(/<link[^>]+rel=["']canonical["'][^>]*>/i)?.[0]?.match(/href=["']([^"']+)["']/i)?.[1] || null) : null
+    const published = html ? getMetaBy('property', 'article:published_time') : null
+    const author = html ? (getMetaBy('property', 'article:author') || getMetaBy('name', 'author')) : null
 
     let title = ogTitle
     if (!title) {
@@ -112,7 +119,7 @@ export async function extractOpenGraph(targetUrl: string): Promise<OpenGraphMeta
     }
 
     let image = ogImage ? toAbsoluteUrl(ogImage, targetUrl) : null
-    if (!image) {
+    if (!image && html) {
       const m = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i)
       image = m ? toAbsoluteUrl(m[1], targetUrl) : null
     }
