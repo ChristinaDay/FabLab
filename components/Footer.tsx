@@ -17,9 +17,9 @@ export default function Footer() {
           <div className="text-black dark:text-white font-semibold">ShopTalk</div>
           <div>© {new Date().getFullYear()} Curated news and jobs for makers and fabricators.</div>
           <div className="flex gap-4 text-black dark:text-white">
+            <a href="/" className="underline">Home</a>
+            <a href="/jobs" className="underline">Job Board</a>
             <a href="/topstories" className="underline">Top Stories</a>
-            <a href="/jobs" className="underline">Jobs</a>
-            <a href="/admin" className="underline">Admin</a>
           </div>
         </div>
         <div className="lg:col-span-2">
