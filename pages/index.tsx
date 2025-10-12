@@ -12,7 +12,7 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
   const picks = restItems.slice(0, 3)
   const recent = restItems.slice(3, 10)
   const centerSecondaries = mainOther // highlight additional main stories under the hero
-  const centerGrid = restItems.slice(0, 4)
+  const centerGrid = restItems.slice(0, 8)
   const latestList = restItems.slice(21, 33)
   const quickReads = restItems.slice(latestList.length ? 33 : 21, latestList.length ? 41 : 29)
 
