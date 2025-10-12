@@ -15,6 +15,7 @@ export default function Nav() {
   const [hydrated, setHydrated] = useState(false)
   const isActive = (path: string) => router.pathname === path
   const isAdminRoute = router.pathname.startsWith('/admin')
+  const showCategories = !isAdminRoute && !['/jobs', '/dashboard'].includes(router.pathname)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUserEmail(data.session?.user?.email || null))
@@ -206,8 +207,8 @@ export default function Nav() {
         </div>
       ) : null}
 
-      {/* Categories row (hide on admin routes) */}
-      {!isAdminRoute && (
+      {/* Categories row (hide on admin routes and dashboard/jobs) */}
+      {showCategories && (
         <div className="w-full border-t">
           <nav className="max-w-7xl mx-auto px-4 h-11 flex items-center gap-5 overflow-x-auto overflow-y-hidden text-sm">
             <a href="/?category=industrial-design" className={`whitespace-nowrap py-3 ${router.query.category === 'industrial-design' ? 'text-black font-semibold border-b-2 border-black' : 'text-black/70 hover:text-black border-b-2 border-transparent'}`}>Industrial Design</a>
