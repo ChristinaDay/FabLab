@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServiceRoleClient, upsertItemServer } from '@/lib/db'
-import { extractOpenGraph } from '@/lib/extractOg'
+import { extractOpenGraph, fetchGraphOEmbed } from '@/lib/extractOg'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -8,7 +8,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { url, tags, visible } = req.body as { url?: string; tags?: string[]; visible?: boolean }
     if (!url || !/^https?:\/\//i.test(url)) return res.status(400).json({ error: 'Missing or invalid url' })
 
-    const og = await extractOpenGraph(url)
+    const ogGraph = await fetchGraphOEmbed(url)
+    const og = ogGraph || await extractOpenGraph(url)
     const client = getServiceRoleClient()
 
     const hostname = new URL(url).hostname.replace(/^www\./, '')

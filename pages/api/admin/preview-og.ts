@@ -1,12 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { extractOpenGraph } from '@/lib/extractOg'
+import { extractOpenGraph, fetchGraphOEmbed } from '@/lib/extractOg'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
   const url = String(req.query.url || '')
   if (!url || !/^https?:\/\//i.test(url)) return res.status(400).json({ error: 'Missing or invalid url' })
   try {
-    const og = await extractOpenGraph(url)
+    const ogGraph = await fetchGraphOEmbed(url)
+    const og = ogGraph || await extractOpenGraph(url)
     if (!og) return res.status(200).json({ ok: true, meta: null })
     return res.status(200).json({ ok: true, meta: og })
   } catch (err) {

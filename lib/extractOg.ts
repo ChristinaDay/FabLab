@@ -156,6 +156,34 @@ export async function extractOpenGraph(targetUrl: string): Promise<OpenGraphMeta
   }
 }
 
+export async function fetchGraphOEmbed(targetUrl: string): Promise<OpenGraphMeta | null> {
+  try {
+    const appId = process.env.FB_APP_ID
+    const appSecret = process.env.FB_APP_SECRET
+    if (!appId || !appSecret) return null
+    const accessToken = `${appId}|${appSecret}`
+    const host = new URL(targetUrl).hostname.replace(/^www\./, '')
+    let endpoint: string | null = null
+    if (/instagram\.com$/i.test(host)) {
+      endpoint = `https://graph.facebook.com/v19.0/instagram_oembed?url=${encodeURIComponent(targetUrl)}&access_token=${encodeURIComponent(accessToken)}`
+    } else if (/facebook\.com$/i.test(host)) {
+      endpoint = `https://graph.facebook.com/v19.0/oembed_post?url=${encodeURIComponent(targetUrl)}&access_token=${encodeURIComponent(accessToken)}`
+    } else {
+      return null
+    }
+    const resp = await fetch(endpoint, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+    if (!resp.ok) return null
+    const data = await resp.json() as any
+    const image = (data.thumbnail_url as string | undefined) || null
+    const title = (data.title as string | undefined) || null
+    const author = (data.author_name as string | undefined) || null
+    const siteName = /instagram\.com$/i.test(host) ? 'Instagram' : 'Facebook'
+    return { title, description: null, image, siteName, canonicalUrl: targetUrl, publishedTime: null, author }
+  } catch {
+    return null
+  }
+}
+
 async function tryInstagramOEmbed(url: string): Promise<OpenGraphMeta | null> {
   try {
     const api = `https://www.instagram.com/oembed/?omitscript=true&url=${encodeURIComponent(url)}`
