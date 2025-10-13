@@ -5,7 +5,7 @@ import { extractOpenGraph, fetchGraphOEmbed } from '@/lib/extractOg'
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   try {
-    const { url, tags, visible } = req.body as { url?: string; tags?: string[]; visible?: boolean }
+    const { url, tags, visible, override } = req.body as { url?: string; tags?: string[]; visible?: boolean; override?: { title?: string; image?: string } }
     if (!url || !/^https?:\/\//i.test(url)) return res.status(400).json({ error: 'Missing or invalid url' })
 
     const ogGraph = await fetchGraphOEmbed(url)
@@ -17,9 +17,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const allTags = Array.from(new Set([...(tags || []), 'social', ...(platformTag ? [platformTag] : [])]))
 
-    const title = og?.title || 'Untitled'
+    const title = override?.title || og?.title || 'Untitled'
     const source = og?.siteName || hostname
-    const image = og?.image || null
+    const image = override?.image || og?.image || null
     const excerpt = og?.description || ''
     const canonical = og?.canonicalUrl || url
     const publishedAt = og?.publishedTime || new Date().toISOString()

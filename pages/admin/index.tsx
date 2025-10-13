@@ -57,6 +57,8 @@ export default function AdminPage() {
   const [preview, setPreview] = useState<any | null>(null)
   const [previewMsg, setPreviewMsg] = useState<string | null>(null)
   const [publishTags, setPublishTags] = useState<string[]>([])
+  const [manualTitle, setManualTitle] = useState('')
+  const [manualImage, setManualImage] = useState('')
 
   useEffect(() => {
     let unsub: { unsubscribe: () => void } | null = null
@@ -136,7 +138,7 @@ export default function AdminPage() {
     try {
       const res = await authedFetch('/api/admin/items-upsert-from-url', {
         method: 'POST',
-        body: JSON.stringify({ url, tags: publishTags, visible: true })
+        body: JSON.stringify({ url, tags: publishTags, visible: true, override: { title: manualTitle || undefined, image: manualImage || undefined } })
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.detail || json.error || 'Failed to publish')
@@ -407,6 +409,14 @@ export default function AdminPage() {
             {preview.description ? <p className="text-sm mt-2">{preview.description}</p> : null}
           </div>
         ) : null}
+        {/* Manual overrides when preview fails */}
+        <details className="mt-3">
+          <summary className="cursor-pointer text-sm underline">Manual overrides (use if preview is incomplete)</summary>
+          <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+            <input className="border rounded px-3 py-2" placeholder="Title override (optional)" value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} />
+            <input className="border rounded px-3 py-2" placeholder="Image URL override (optional)" value={manualImage} onChange={(e) => setManualImage(e.target.value)} />
+          </div>
+        </details>
         {previewMsg ? <div className="text-sm text-gray-700">{previewMsg}</div> : null}
       </div>
 
