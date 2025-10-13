@@ -3,13 +3,22 @@ import Nav from '@/components/Nav'
 import dynamic from 'next/dynamic'
 const BookmarkButton = dynamic(() => import('@/components/BookmarkButton'), { ssr: false })
 const LikeButton = dynamic(() => import('@/components/LikeButton'), { ssr: false })
+import EmbedOrImage from '@/components/EmbedOrImage'
 import { fetchVisibleItemsFiltered, fetchFeatured, fetchPicks, fetchRecentExcluding, fetchByTagExcluding, fetchVisibleJobs } from '@/lib/db'
 
 export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
   const mainStories = items.slice(0, 3)
   const [mainHero, ...mainOther] = mainStories
   const restItems = items.slice(3)
-  const picks = restItems.slice(0, 3)
+  const picks = restItems
+    .filter((i: any) => {
+      const tags = Array.isArray(i.tags) ? i.tags : []
+      const byTags = !(tags.includes('social') || tags.includes('instagram'))
+      const bySource = !(i.source && /instagram/i.test(i.source))
+      const byLink = !(i.link && /instagram\.com/i.test(i.link))
+      return byTags && bySource && byLink
+    })
+    .slice(0, 3)
   const recent = restItems.slice(3, 10)
   const centerSecondaries = mainOther // highlight additional main stories under the hero
   const centerGrid = restItems.slice(0, 8)
@@ -34,11 +43,11 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
               <div className="space-y-6">
                 {picks.map((item: any) => (
                   <article key={item.id} className="border-b pb-6 last:border-b-0">
-                    {item.thumbnail && (
+                    {item.thumbnail ? (
                       <img src={item.thumbnail} alt={item.title} className="w-full h-40 object-cover mb-3" />
-                    )}
+                    ) : null}
                     <a href={item.link} target="_blank" rel="noreferrer" className="block font-semibold hover:underline">
-                      {item.title}
+                      {item.title || 'Untitled'}
                     </a>
                     <div className="text-xs text-gray-500 mt-2">{item.source} • {new Date(item.published_at).toLocaleDateString()}</div>
                   </article>
@@ -106,24 +115,24 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
                   </article>
                 ))}
               </div>
-              {/* From Social */}
+              {/* From Social Media */}
               <div className="mt-10">
-                <div className="badge-dark mb-3 inline-block">From Social</div>
+                <div className="badge-dark mb-3 inline-block">From Social Media</div>
                 <div className="space-y-5">
                   {items.filter((i: any) => Array.isArray(i.tags) && i.tags.includes('social')).slice(0,8).map((item: any) => (
-                    <article key={`social-${item.id}`} className="grid grid-cols-5 gap-3 items-start">
-                      {item.thumbnail && (
-                        <img src={item.thumbnail} alt={item.title} className="col-span-2 w-full h-16 object-cover" />
-                      )}
-                      <div className={item.thumbnail ? 'col-span-3' : 'col-span-5'}>
-                        <a href={item.link} target="_blank" rel="noreferrer" className="block text-sm font-semibold leading-snug hover:underline">
-                          {item.title}
-                        </a>
-                        <div className="text-[11px] text-gray-500 mt-1">{new Date(item.published_at).toLocaleDateString()}</div>
-                      </div>
+                    <article key={`social-${item.id}`} className="space-y-2">
+                      <EmbedOrImage
+                        embedHtml={item.embed_html}
+                        thumbnail={item.thumbnail}
+                        title={item.title}
+                        className={item.embed_html ? '' : 'w-full h-44 object-cover'}
+                        lazy
+                      />
+                      <div className="text-[11px] text-gray-500 mt-1">{new Date(item.published_at).toLocaleDateString()}</div>
                     </article>
                   ))}
                 </div>
+                <a href="/social" className="text-sm underline inline-block mt-3">See all social →</a>
               </div>
               {/* Promo modules */}
               <div className="mt-6 grid gap-4">

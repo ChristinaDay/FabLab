@@ -16,6 +16,7 @@ export type UpsertItem = {
   curated_note?: string
   featured_rank?: number | null
   pick_rank?: number | null
+  embed_html?: string | null
 }
 
 // upsert item - avoid duplicates by link

@@ -61,13 +61,44 @@ export type OpenGraphMeta = {
   author?: string | null
 }
 
+// Lightweight parser to pull a reasonable title and site from raw embed HTML
+export function parseEmbedMeta(embedHtml: string): { title: string | null; siteName: string | null } {
+  const siteName = embedHtml.includes('instagram-media') ? 'Instagram' : embedHtml.includes('fb-post') ? 'Facebook' : null
+
+  // Prefer the first <p> inside a blockquote as the human-readable caption/text
+  const firstP = embedHtml.match(/<blockquote[\s\S]*?<p>([\s\S]*?)<\/p>/i)?.[1] || null
+  const textFromP = firstP ? firstP.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : null
+
+  // Fallback to all text inside blockquote
+  const blockInner = embedHtml.match(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/i)?.[1] || ''
+  const textFromBlock = blockInner.replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  let title = textFromP || textFromBlock || null
+  if (title && title.length > 200) title = title.slice(0, 200) + '…'
+  // Normalize common IG boilerplate
+  if (siteName === 'Instagram' && title && /^view (this|on) instagram/i.test(title)) {
+    title = null
+  }
+  return { title, siteName }
+}
+
 export async function extractOpenGraph(targetUrl: string): Promise<OpenGraphMeta | null> {
   if (!targetUrl) return null
   try {
     const urlObj = new URL(targetUrl)
     const hostname = urlObj.hostname.replace(/^www\./, '')
 
-    // 1) Platform-specific fallbacks first (often more reliable than raw HTML)
+    // 1) Try Graph API first (most reliable for FB/IG)
+    if (hostname.includes('instagram.com') || hostname.includes('facebook.com')) {
+      const graphResult = await fetchGraphOEmbed(targetUrl)
+      if (graphResult) return graphResult
+    }
+
+    // 2) Platform-specific fallbacks (public endpoints, less reliable)
     if (hostname.includes('instagram.com')) {
       const ig = await tryInstagramOEmbed(targetUrl)
       if (ig) return ig
@@ -171,8 +202,16 @@ export async function fetchGraphOEmbed(targetUrl: string): Promise<OpenGraphMeta
     } else {
       return null
     }
-    const resp = await fetch(endpoint, { headers: { 'User-Agent': 'Mozilla/5.0' } })
-    if (!resp.ok) return null
+    const resp = await fetch(endpoint, {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      signal: AbortSignal.timeout(10000) // 10 second timeout
+    })
+    if (!resp.ok) {
+      const errorText = await resp.text().catch(() => 'Unknown error')
+      console.error(`Graph API error (${resp.status}): ${errorText}`)
+      // Graph API requires app review for Instagram oEmbed - fallback to other methods
+      return null
+    }
     const data = await resp.json() as any
     const image = (data.thumbnail_url as string | undefined) || null
     const title = (data.title as string | undefined) || null
