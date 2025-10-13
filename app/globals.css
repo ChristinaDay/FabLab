@@ -50,3 +50,32 @@ p { color: #6b7280; }
   .separator { background:rgba(255,255,255,.18); }
   .subtle-rule { border-top:1px solid rgba(255,255,255,.15); }
 }
+
+/* Embedded content styling (Instagram/Facebook) */
+.embed-container {
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+/* Override Instagram's inline styles for dark mode compatibility */
+.embed-container iframe { border: none !important; max-width: 100% !important; }
+
+/* Instagram default appearance with subtle border */
+.embed-container blockquote.instagram-media {
+  background: transparent !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border-radius: 8px !important;
+  margin: 0 auto !important;
+  max-width: 540px !important;
+  min-width: 326px !important;
+  padding: 0 !important;
+  width: calc(100% - 2px) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .embed-container blockquote.instagram-media {
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  }
+}

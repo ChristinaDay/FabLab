@@ -12,6 +12,7 @@ async function authedFetch(input: RequestInfo | URL, init?: RequestInit) {
   return fetch(input, { ...(init || {}), headers })
 }
 import Nav from '@/components/Nav'
+import EmbedOrImage from '@/components/EmbedOrImage'
 
 type Item = {
   id: string
@@ -25,6 +26,7 @@ type Item = {
   tags?: string[]
   featured_rank?: number | null
   pick_rank?: number | null
+  embed_html?: string | null
 }
 
 export default function AdminPage() {
@@ -38,6 +40,8 @@ export default function AdminPage() {
     { key: 'guides', label: 'Guides' },
   ]
   const [items, setItems] = useState<Item[]>([])
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [undoData, setUndoData] = useState<Item[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [feedUrl, setFeedUrl] = useState('')
   const [ingesting, setIngesting] = useState(false)
@@ -48,6 +52,7 @@ export default function AdminPage() {
   const [bfSource, setBfSource] = useState('')
   const [bfTag, setBfTag] = useState('')
   const [bfMsg, setBfMsg] = useState<string | null>(null)
+  const [embedTitleMsg, setEmbedTitleMsg] = useState<string | null>(null)
   const [addItem, setAddItem] = useState({ title: '', link: '', excerpt: '', source: '', thumbnail: '', tags: [] as string[], visible: true })
   const [addMsg, setAddMsg] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<'published_at'|'source'|'title'>('published_at')
@@ -59,6 +64,8 @@ export default function AdminPage() {
   const [publishTags, setPublishTags] = useState<string[]>([])
   const [manualTitle, setManualTitle] = useState('')
   const [manualImage, setManualImage] = useState('')
+  const [customTag, setCustomTag] = useState('')
+  const [showImageFallback, setShowImageFallback] = useState(false)
 
   useEffect(() => {
     let unsub: { unsubscribe: () => void } | null = null
@@ -108,6 +115,7 @@ export default function AdminPage() {
       const json = await res.json()
       if (!res.ok) throw new Error(json.detail || json.error || 'Failed to load')
       setItems((json.items || []) as Item[])
+      setSelectedIds([])
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(e)
@@ -116,13 +124,42 @@ export default function AdminPage() {
     }
   }
 
+  function isEmbedCode(input: string): boolean {
+    return input.trim().startsWith('<') && (input.includes('instagram-media') || input.includes('fb-post'))
+  }
+
   async function previewOg() {
     setPreview(null)
     setPreviewMsg(null)
-    const url = addUrl.trim()
-    if (!url) return
+    const input = addUrl.trim()
+    if (!input) return
+
+    // If it's embed code, set it as preview with special flag
+    if (isEmbedCode(input)) {
+      setPreview({ embedHtml: input, title: 'Embedded content', siteName: 'Instagram/Facebook' } as any)
+      setPreviewMsg('✓ Embed code detected - preview shown below')
+
+      // Load Instagram embed script if needed
+      if (input.includes('instagram-media') && !(window as any).instgrm) {
+        const script = document.createElement('script')
+        script.src = '//www.instagram.com/embed.js'
+        script.async = true
+        document.body.appendChild(script)
+      }
+
+      // Trigger Instagram embed processing after a short delay
+      setTimeout(() => {
+        if ((window as any).instgrm) {
+          (window as any).instgrm.Embeds.process()
+        }
+      }, 500)
+
+      return
+    }
+
+    // Otherwise try to fetch preview
     try {
-      const res = await authedFetch(`/api/admin/preview-og?url=${encodeURIComponent(url)}`)
+      const res = await authedFetch(`/api/admin/preview-og?url=${encodeURIComponent(input)}`)
       const json = await res.json()
       if (!res.ok) throw new Error(json.detail || json.error || 'Failed to preview')
       setPreview(json.meta)
@@ -145,6 +182,9 @@ export default function AdminPage() {
       setAddUrl('')
       setPreview(null)
       setPublishTags([])
+      setManualTitle('')
+      setManualImage('')
+      setPreviewMsg('✓ Published successfully!')
       fetchItems()
     } catch (e: any) {
       setPreviewMsg(e.message || 'Failed to publish')
@@ -360,9 +400,53 @@ export default function AdminPage() {
           {importMsg ? <div className="text-sm text-gray-700">{importMsg}</div> : null}
         </div>
       </div>
-      {/* Backfill categories */}
+      {/* Bulk actions & Backfill categories */}
       <div className="mb-8 space-y-2 border rounded p-4">
-        <div className="font-medium">Backfill categories</div>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="font-medium">Backfill categories</div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                if (!selectedIds.length) return
+                if (!confirm(`Delete ${selectedIds.length} selected item(s)?`)) return
+                // capture undo payload
+                const undoPayload = items.filter((it) => selectedIds.includes(it.id))
+                const res = await authedFetch('/api/admin/items-bulk-delete', {
+                  method: 'POST',
+                  body: JSON.stringify({ ids: selectedIds })
+                })
+                const json = await res.json()
+                if (!res.ok) {
+                  alert(json.detail || json.error || 'Failed to delete')
+                  return
+                }
+                setUndoData(undoPayload)
+                fetchItems()
+              }}
+              disabled={!selectedIds.length}
+              className={`px-3 py-2 rounded ${selectedIds.length ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-300 text-gray-600'}`}
+            >
+              Delete selected
+            </button>
+            <button
+              onClick={async () => {
+                setEmbedTitleMsg(null)
+                try {
+                  const res = await authedFetch('/api/admin/backfill-embed-titles', { method: 'POST' })
+                  const json = await res.json()
+                  if (!res.ok) throw new Error(json.detail || json.error || 'Failed')
+                  setEmbedTitleMsg(`Updated ${json.updated} of ${json.scanned} items`)
+                  fetchItems()
+                } catch (e: any) {
+                  setEmbedTitleMsg(e.message || 'Failed to backfill')
+                }
+              }}
+              className="px-3 py-2 rounded border hover:bg-gray-50"
+            >
+              Backfill embed titles
+            </button>
+          </div>
+        </div>
         <div className="text-sm text-gray-600">Add a tag to items matching a source substring.</div>
         <div className="flex flex-wrap gap-2 items-center">
           <input className="border rounded px-3 py-2" placeholder="Source contains (e.g. Core77)" value={bfSource} onChange={(e) => setBfSource(e.target.value)} />
@@ -381,11 +465,46 @@ export default function AdminPage() {
         </div>
       </div>
 
+      {embedTitleMsg ? (
+        <div className="mb-4 text-sm text-gray-700">{embedTitleMsg}</div>
+      ) : null}
+
+      {undoData && undoData.length ? (
+        <div className="mb-4 p-3 rounded border bg-yellow-50 text-yellow-800 flex items-center justify-between gap-3">
+          <div>
+            Deleted {undoData.length} item(s).
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              className="px-3 py-1 rounded border border-yellow-700 hover:bg-yellow-100"
+              onClick={async () => {
+                // restore via upsert
+                try {
+                  const res = await authedFetch('/api/admin/items-upsert', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                      // restore first item only for simplicity?
+                    })
+                  })
+                } catch {}
+              }}
+              disabled
+            >
+              Undo (coming soon)
+            </button>
+            <button className="px-3 py-1 rounded border" onClick={() => setUndoData(null)}>Dismiss</button>
+          </div>
+        </div>
+      ) : null}
+
       {/* Add by URL (social or any share link) */}
       <div className="mb-8 space-y-2 border rounded p-4">
-        <div className="font-medium">Add content by URL (Instagram, Facebook, any link)</div>
+        <div className="font-medium">Add content by URL</div>
+        <div className="text-sm text-gray-400 mb-2">
+          Paste a URL or Instagram/Facebook embed code (click "Embed" on the post and copy the entire code)
+        </div>
         <div className="flex flex-wrap gap-2 items-center">
-          <input className="flex-1 border rounded px-3 py-2" placeholder="Paste share URL (https://...)" value={addUrl} onChange={(e) => setAddUrl(e.target.value)} />
+          <input className="flex-1 border rounded px-3 py-2" placeholder="https://... or <blockquote class=..." value={addUrl} onChange={(e) => setAddUrl(e.target.value)} />
           <button onClick={previewOg} className="px-3 py-2 rounded border hover:bg-gray-50">Preview</button>
           <button onClick={publishFromUrl} className="px-3 py-2 rounded bg-green-600 text-white hover:bg-green-700" disabled={!addUrl.trim()}>Publish</button>
         </div>
@@ -400,24 +519,164 @@ export default function AdminPage() {
               {t.label}
             </label>
           ))}
+          <div className="flex items-center gap-2">
+            <input
+              value={customTag}
+              onChange={(e) => setCustomTag(e.target.value)}
+              placeholder="Add tag"
+              className="border rounded px-2 py-1"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  const t = customTag.trim()
+                  if (t && !publishTags.includes(t)) setPublishTags((prev) => [...prev, t])
+                  setCustomTag('')
+                }
+              }}
+            />
+            <button
+              type="button"
+              className="px-2 py-1 rounded border hover:bg-gray-50"
+              onClick={() => {
+                const t = customTag.trim()
+                if (t && !publishTags.includes(t)) setPublishTags((prev) => [...prev, t])
+                setCustomTag('')
+              }}
+            >
+              Add
+            </button>
+          </div>
+          {publishTags.length ? (
+            <div className="flex flex-wrap items-center gap-1">
+              {publishTags.map((t) => (
+                <span key={`sel-${t}`} className="inline-flex items-center gap-1 px-2 py-0.5 border rounded">
+                  {t}
+                  <button type="button" onClick={() => setPublishTags((prev) => prev.filter((x) => x !== t))}>×</button>
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
         {preview ? (
-          <div className="mt-3 p-3 border rounded">
-            <div className="text-xs uppercase tracking-wide text-black/70">{preview.siteName}</div>
-            <div className="font-semibold">{preview.title}</div>
-            {preview.image ? <img src={preview.image} alt="" className="w-full max-w-md h-40 object-cover mt-2" /> : null}
-            {preview.description ? <p className="text-sm mt-2">{preview.description}</p> : null}
+          <div className="mt-3 p-3 border border-gray-600 rounded">
+            <div className="text-xs uppercase tracking-wide text-gray-400">{preview.siteName || ((preview as any).embedHtml?.includes('instagram-media') ? 'Instagram' : (preview as any).embedHtml?.includes('fb-post') ? 'Facebook' : '')}</div>
+            <div className="font-semibold">{preview.title || ((preview as any).embedHtml ? 'Embedded content' : <span className="text-red-500">⚠️ No title found</span>)}</div>
+            <div className="mt-2 text-xs text-gray-500 flex items-center gap-3">
+              <label className="flex items-center gap-1">
+                <input type="radio" name="preview-media-mode" checked={!showImageFallback} onChange={() => setShowImageFallback(false)} />
+                <span>Embed</span>
+              </label>
+              <label className="flex items-center gap-1">
+                <input type="radio" name="preview-media-mode" checked={showImageFallback} onChange={() => setShowImageFallback(true)} />
+                <span>Thumbnail fallback</span>
+              </label>
+            </div>
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="border rounded p-2">
+                <div className="text-xs uppercase tracking-wide text-gray-500">Main story</div>
+                {(showImageFallback ? !!preview.image : (Boolean((preview as any).embedHtml) || !!preview.image)) ? (
+                  <div className="mt-2">
+                    <EmbedOrImage
+                      embedHtml={showImageFallback ? undefined : (preview as any).embedHtml}
+                      thumbnail={preview.image}
+                      title={preview.title || 'Embedded content'}
+                      lazy={false}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full h-40 bg-gray-800 mt-2 rounded flex items-center justify-center text-gray-400 text-sm">⚠️ No media</div>
+                )}
+              </div>
+              <div className="border rounded p-2">
+                <div className="text-xs uppercase tracking-wide text-gray-500">Sidebar: From Social</div>
+                {(showImageFallback ? !!preview.image : (Boolean((preview as any).embedHtml) || !!preview.image)) ? (
+                  <div className="mt-2">
+                    <EmbedOrImage
+                      embedHtml={showImageFallback ? undefined : (preview as any).embedHtml}
+                      thumbnail={preview.image}
+                      title={preview.title || 'Embedded content'}
+                      lazy={false}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full h-40 bg-gray-800 mt-2 rounded flex items-center justify-center text-gray-400 text-sm">⚠️ No media</div>
+                )}
+              </div>
+              <div className="border rounded p-2">
+                <div className="text-xs uppercase tracking-wide text-gray-500">Grid card</div>
+                {(showImageFallback ? !!preview.image : (Boolean((preview as any).embedHtml) || !!preview.image)) ? (
+                  <div className="mt-2">
+                    <EmbedOrImage
+                      embedHtml={showImageFallback ? undefined : (preview as any).embedHtml}
+                      thumbnail={preview.image}
+                      title={preview.title || 'Embedded content'}
+                      lazy={false}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full h-40 bg-gray-800 mt-2 rounded flex items-center justify-center text-gray-400 text-sm">⚠️ No media</div>
+                )}
+              </div>
+            </div>
+            {preview.description ? <p className="text-sm mt-3 text-gray-300">{preview.description}</p> : null}
           </div>
         ) : null}
-        {/* Manual overrides when preview fails */}
-        <details className="mt-3">
-          <summary className="cursor-pointer text-sm underline">Manual overrides (use if preview is incomplete)</summary>
-          <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
-            <input className="border rounded px-3 py-2" placeholder="Title override (optional)" value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} />
-            <input className="border rounded px-3 py-2" placeholder="Image URL override (optional)" value={manualImage} onChange={(e) => setManualImage(e.target.value)} />
+        {previewMsg ? <div className="text-sm text-green-700 bg-green-50 p-2 rounded mt-2">{previewMsg}</div> : null}
+        {/* Manual title/caption overrides always available */}
+        <div className="mt-3 p-3 border rounded border-gray-600">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs block mb-1">Title override</label>
+              <input
+                className="w-full border rounded px-3 py-2"
+                placeholder={preview?.title || 'Enter title'}
+                value={manualTitle}
+                onChange={(e) => setManualTitle(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="text-xs block mb-1">Caption (optional)</label>
+              <input
+                className="w-full border rounded px-3 py-2"
+                placeholder="Add a caption"
+                value={manualImage}
+                onChange={(e) => setManualImage(e.target.value)}
+              />
+            </div>
           </div>
-        </details>
-        {previewMsg ? <div className="text-sm text-gray-700">{previewMsg}</div> : null}
+        </div>
+        {/* Manual overrides - only show if NOT embed code */}
+        {(preview && !(preview as any).embedHtml) || (!preview && previewMsg && !previewMsg.includes('Embed code detected')) ? (
+          <div className={`mt-3 p-3 border rounded ${(!preview?.title || !preview?.image) ? 'border-amber-500' : 'border-gray-600'}`}>
+            <div className="text-sm font-medium mb-2">
+              {(!preview?.title || !preview?.image) ? (
+                <span className="text-amber-500">⚠️ Preview incomplete - Add missing info manually:</span>
+              ) : (
+                <span>✓ Preview loaded - Optionally override below:</span>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs block mb-1">Title {!preview?.title && <span className="text-red-500">*</span>}</label>
+                <input
+                  className={`w-full border rounded px-3 py-2 ${!preview?.title ? 'border-amber-500' : 'border-gray-600'}`}
+                  placeholder={preview?.title || "Enter title manually"}
+                  value={manualTitle}
+                  onChange={(e) => setManualTitle(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs block mb-1">Image URL {!preview?.image && <span className="text-red-500">*</span>}</label>
+                <input
+                  className={`w-full border rounded px-3 py-2 ${!preview?.image ? 'border-amber-500' : 'border-gray-600'}`}
+                  placeholder={preview?.image || "Paste image URL manually"}
+                  value={manualImage}
+                  onChange={(e) => setManualImage(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {/* Add individual item */}
@@ -480,7 +739,78 @@ export default function AdminPage() {
       {loading ? (
         <div>Loading…</div>
       ) : (
-        <AdminItemsList items={items} sortBy={sortBy} sortDir={sortDir} groupBy={groupBy} onToggleVisible={toggleVisible} />
+        <>
+          {/* Embedded content section */}
+          {items.some((it) => !!(it as any).embed_html) ? (
+            <section className="mb-8">
+              <h2 className="text-lg font-semibold mb-3">Embedded Content</h2>
+              <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
+                <input id="bulk-add-tag" placeholder="Add tag to selected" className="border rounded px-2 py-1" onKeyDown={async (e) => {
+                  if (e.key === 'Enter') {
+                    const t = (e.target as HTMLInputElement).value.trim()
+                    if (!t || selectedIds.length === 0) return
+                    await authedFetch('/api/admin/items-bulk-update-tags', { method: 'POST', body: JSON.stringify({ ids: selectedIds, addTag: t }) })
+                    ;(e.target as HTMLInputElement).value = ''
+                    fetchItems()
+                  }
+                }} />
+                <button
+                  className="px-2 py-1 rounded border hover:bg-gray-50"
+                  onClick={async () => {
+                    const input = document.getElementById('bulk-add-tag') as HTMLInputElement
+                    const t = input?.value.trim()
+                    if (!t || selectedIds.length === 0) return
+                    await authedFetch('/api/admin/items-bulk-update-tags', { method: 'POST', body: JSON.stringify({ ids: selectedIds, addTag: t }) })
+                    if (input) input.value = ''
+                    fetchItems()
+                  }}
+                >Add tag</button>
+                <input id="bulk-remove-tag" placeholder="Remove tag from selected" className="border rounded px-2 py-1" onKeyDown={async (e) => {
+                  if (e.key === 'Enter') {
+                    const t = (e.target as HTMLInputElement).value.trim()
+                    if (!t || selectedIds.length === 0) return
+                    await authedFetch('/api/admin/items-bulk-update-tags', { method: 'POST', body: JSON.stringify({ ids: selectedIds, removeTag: t }) })
+                    ;(e.target as HTMLInputElement).value = ''
+                    fetchItems()
+                  }
+                }} />
+                <button
+                  className="px-2 py-1 rounded border hover:bg-gray-50"
+                  onClick={async () => {
+                    const input = document.getElementById('bulk-remove-tag') as HTMLInputElement
+                    const t = input?.value.trim()
+                    if (!t || selectedIds.length === 0) return
+                    await authedFetch('/api/admin/items-bulk-update-tags', { method: 'POST', body: JSON.stringify({ ids: selectedIds, removeTag: t }) })
+                    if (input) input.value = ''
+                    fetchItems()
+                  }}
+                >Remove tag</button>
+              </div>
+              <AdminEmbedsList
+                items={items.filter((it) => !!(it as any).embed_html)}
+                onToggleVisible={toggleVisible}
+                onDeleted={fetchItems}
+                selectedIds={selectedIds}
+                setSelectedIds={setSelectedIds}
+              />
+            </section>
+          ) : null}
+
+          {/* Regular items (non-embed) */}
+          <section>
+            <h2 className="text-lg font-semibold mb-3">All Items</h2>
+            <AdminItemsList
+              items={items.filter((it) => !(it as any).embed_html)}
+              sortBy={sortBy}
+              sortDir={sortDir}
+              groupBy={groupBy}
+              onToggleVisible={toggleVisible}
+              onDeleted={fetchItems}
+              selectedIds={selectedIds}
+              setSelectedIds={setSelectedIds}
+            />
+          </section>
+        </>
       )}
       </div>
     </>
@@ -493,9 +823,12 @@ type AdminItemsListProps = {
   sortDir: 'asc'|'desc'
   groupBy: 'none'|'date'|'source'|'topic'|'visibility'
   onToggleVisible: (id: string, current: boolean) => void
+  onDeleted: () => void
+  selectedIds: string[]
+  setSelectedIds: React.Dispatch<React.SetStateAction<string[]>>
 }
 
-function AdminItemsList({ items, sortBy, sortDir, groupBy, onToggleVisible }: AdminItemsListProps) {
+function AdminItemsList({ items, sortBy, sortDir, groupBy, onToggleVisible, onDeleted, selectedIds, setSelectedIds }: AdminItemsListProps) {
   const sorted = [...items].sort((a, b) => {
     const dir = sortDir === 'asc' ? 1 : -1
     if (sortBy === 'published_at') {
@@ -517,7 +850,7 @@ function AdminItemsList({ items, sortBy, sortDir, groupBy, onToggleVisible }: Ad
     return (
       <div className="space-y-4">
         {sorted.map((it) => (
-          <AdminItemRow key={it.id} it={it} onToggleVisible={onToggleVisible} />
+          <AdminItemRow key={it.id} it={it} onToggleVisible={onToggleVisible} onDeleted={onDeleted} selectedIds={selectedIds} setSelectedIds={setSelectedIds} />
         ))}
       </div>
     )
@@ -542,7 +875,7 @@ function AdminItemsList({ items, sortBy, sortDir, groupBy, onToggleVisible }: Ad
           <h3 className="text-sm font-semibold text-gray-700 mb-3">{k}</h3>
           <div className="space-y-4">
             {groups[k].map((it) => (
-              <AdminItemRow key={it.id} it={it} onToggleVisible={onToggleVisible} />
+              <AdminItemRow key={it.id} it={it} onToggleVisible={onToggleVisible} onDeleted={onDeleted} selectedIds={selectedIds} setSelectedIds={setSelectedIds} />
             ))}
           </div>
         </section>
@@ -551,7 +884,7 @@ function AdminItemsList({ items, sortBy, sortDir, groupBy, onToggleVisible }: Ad
   )
 }
 
-function AdminItemRow({ it, onToggleVisible }: { it: Item; onToggleVisible: (id: string, current: boolean) => void }) {
+function AdminItemRow({ it, onToggleVisible, onDeleted, selectedIds, setSelectedIds }: { it: Item; onToggleVisible: (id: string, current: boolean) => void; onDeleted: () => void; selectedIds: string[]; setSelectedIds: React.Dispatch<React.SetStateAction<string[]>> }) {
   const TAGS = [
     { key: 'industrial-design', label: 'Industrial Design' },
     { key: 'architecture', label: 'Architecture' },
@@ -601,6 +934,12 @@ function AdminItemRow({ it, onToggleVisible }: { it: Item; onToggleVisible: (id:
 
   return (
     <div className="p-3 border rounded-lg flex gap-4 items-start">
+      <input
+        type="checkbox"
+        className="mt-1"
+        checked={selectedIds.includes(it.id)}
+        onChange={(e) => setSelectedIds((prev) => e.target.checked ? [...prev, it.id] : prev.filter((x) => x !== it.id))}
+      />
       {it.thumbnail ? <img src={it.thumbnail} alt="" className="w-24 h-24 object-cover rounded" /> : null}
       <div className="flex-1">
         <a href={it.link} target="_blank" rel="noreferrer" className="text-lg font-semibold link">
@@ -638,15 +977,151 @@ function AdminItemRow({ it, onToggleVisible }: { it: Item; onToggleVisible: (id:
           <button onClick={saveCuration} className="px-2 py-1 rounded border hover:bg-gray-50">Save curation</button>
         </div>
       </div>
-      <div>
+      <div className="flex flex-col gap-2">
         <button
           onClick={() => onToggleVisible(it.id, !!it.visible)}
           className={`px-3 py-1 rounded ${it.visible ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}
         >
           {it.visible ? 'Unpublish' : 'Publish'}
         </button>
+        <DeleteItemButton id={it.id} onDeleted={onDeleted} />
       </div>
     </div>
+  )
+}
+
+function AdminEmbedsList({ items, onToggleVisible, onDeleted, selectedIds, setSelectedIds }: { items: Item[]; onToggleVisible: (id: string, current: boolean) => void; onDeleted: () => void; selectedIds: string[]; setSelectedIds: React.Dispatch<React.SetStateAction<string[]>> }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {items.map((it) => (
+        <AdminEmbedCard key={it.id} it={it} onToggleVisible={onToggleVisible} onDeleted={onDeleted} selectedIds={selectedIds} setSelectedIds={setSelectedIds} />
+      ))}
+    </div>
+  )
+}
+
+function AdminEmbedCard({ it, onToggleVisible, onDeleted, selectedIds, setSelectedIds }: { it: Item; onToggleVisible: (id: string, current: boolean) => void; onDeleted: () => void; selectedIds: string[]; setSelectedIds: React.Dispatch<React.SetStateAction<string[]>> }) {
+  const [tags, setTags] = React.useState<string[]>(Array.isArray((it as any).tags) ? ((it as any).tags as string[]) : [])
+  const [newTag, setNewTag] = React.useState('')
+
+  async function saveTags() {
+    try {
+      const res = await authedFetch('/api/admin/items-update-tags', { method: 'POST', body: JSON.stringify({ id: it.id, tags }) })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.detail || json.error || 'Failed to save tags')
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e)
+    }
+  }
+
+  return (
+    <div className="p-3 border rounded-lg flex flex-col">
+      <div className="flex items-start gap-2 mb-2">
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={selectedIds.includes(it.id)}
+          onChange={(e) => setSelectedIds((prev) => e.target.checked ? [...prev, it.id] : prev.filter((x) => x !== it.id))}
+        />
+        <div className="flex-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <a href={it.link} target="_blank" rel="noreferrer" className="text-sm font-semibold link">{it.title || 'Embedded content'}</a>
+              <div className="text-xs text-gray-600">{it.source} • {it.published_at?.slice(0,10)}</div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => onToggleVisible(it.id, !!it.visible)}
+                className={`px-2 py-1 rounded text-xs ${it.visible ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}
+              >
+                {it.visible ? 'Unpublish' : 'Publish'}
+              </button>
+              <DeleteItemButton id={it.id} onDeleted={onDeleted} />
+            </div>
+          </div>
+        </div>
+      </div>
+      <EmbedOrImage
+        embedHtml={(it as any).embed_html as any}
+        thumbnail={it.thumbnail}
+        title={it.title || ''}
+        lazy={false}
+        maxHeight={360}
+        collapsible
+      />
+      <div className="mt-2 grid grid-cols-2 gap-2 text-xs items-center">
+        <label className="flex items-center gap-1">
+          <span className="text-gray-600">Featured rank</span>
+          <input defaultValue={it.featured_rank == null ? '' : String(it.featured_rank)} placeholder="" className="w-16 border rounded px-2 py-1" onBlur={(e) => {
+            const v = e.target.value
+            const detail = { id: it.id, f: v.trim() === '' ? null : Number(v) }
+            fetch('/api/admin/items-update-curation', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: detail.id, featured_rank: detail.f, pick_rank: it.pick_rank == null ? null : Number(it.pick_rank) }) })
+          }} />
+        </label>
+        <label className="flex items-center gap-1">
+          <span className="text-gray-600">Pick rank</span>
+          <input defaultValue={it.pick_rank == null ? '' : String(it.pick_rank)} placeholder="" className="w-16 border rounded px-2 py-1" onBlur={(e) => {
+            const v = e.target.value
+            const detail = { id: it.id, p: v.trim() === '' ? null : Number(v) }
+            fetch('/api/admin/items-update-curation', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: detail.id, featured_rank: it.featured_rank == null ? null : Number(it.featured_rank), pick_rank: detail.p }) })
+          }} />
+        </label>
+      </div>
+      <div className="mt-3">
+        <div className="text-xs text-gray-600 mb-1">Tags</div>
+        <div className="flex flex-wrap items-center gap-1 mb-2">
+          {tags.map((t) => (
+            <span key={`${it.id}-tag-${t}`} className="inline-flex items-center gap-1 px-2 py-0.5 border rounded">
+              {t}
+              <button type="button" onClick={() => setTags((prev) => prev.filter((x) => x !== t))}>×</button>
+            </span>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <input value={newTag} onChange={(e) => setNewTag(e.target.value)} placeholder="Add tag" className="border rounded px-2 py-1 text-sm flex-1" onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              const t = newTag.trim()
+              if (t && !tags.includes(t)) setTags((prev) => [...prev, t])
+              setNewTag('')
+            }
+          }} />
+          <button className="px-2 py-1 rounded border text-xs hover:bg-gray-50" onClick={() => {
+            const t = newTag.trim()
+            if (t && !tags.includes(t)) setTags((prev) => [...prev, t])
+            setNewTag('')
+          }}>Add</button>
+          <button className="px-2 py-1 rounded border text-xs hover:bg-gray-50" onClick={saveTags}>Save tags</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DeleteItemButton({ id, onDeleted }: { id: string; onDeleted: () => void }) {
+  const [busy, setBusy] = React.useState(false)
+  async function doDelete() {
+    if (!confirm('Delete this item permanently? This cannot be undone.')) return
+    setBusy(true)
+    try {
+      const res = await authedFetch('/api/admin/items-delete', {
+        method: 'POST',
+        body: JSON.stringify({ id })
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.detail || json.error || 'Failed to delete')
+      onDeleted()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to delete')
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <button onClick={doDelete} disabled={busy} className={`px-3 py-1 rounded ${busy ? 'bg-gray-400' : 'bg-black text-white hover:bg-gray-800'}`}>
+      {busy ? 'Deleting…' : 'Delete'}
+    </button>
   )
 }
 

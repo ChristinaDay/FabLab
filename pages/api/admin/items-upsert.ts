@@ -5,7 +5,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   try {
     const client = getServiceRoleClient()
-    const { title, link, excerpt, source, thumbnail, tags, visible } = req.body as any
+    const { title, link, excerpt, source, thumbnail, tags, visible, caption } = req.body as any
     if (!title || !link) return res.status(400).json({ error: 'Missing title or link' })
     const { data, error } = await client
       .from('items')
@@ -13,6 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         title,
         link,
         excerpt: excerpt || null,
+        caption: caption || null,
         source: source || null,
         thumbnail: thumbnail || null,
         tags: Array.isArray(tags) ? tags : (tags ? [String(tags)] : null),
