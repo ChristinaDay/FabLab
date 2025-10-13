@@ -81,18 +81,14 @@ export default function EmbedOrImage({ embedHtml, thumbnail, title, className = 
   }
 
   // If we have embed HTML, use it
-  if (embedHtml) {
+  if (embedHtml && isInView) {
     return (
       <Wrapper>
-        {isInView ? (
-          <div
-            ref={containerRef}
-            className={`embed-container ${className}`}
-            dangerouslySetInnerHTML={{ __html: embedHtml }}
-          />
-        ) : (
-          <div style={{ width: '100%', height: maxHeight || 200, background: 'rgba(0,0,0,0.05)' }} />
-        )}
+        <div
+          ref={containerRef}
+          className={`embed-container ${className}`}
+          dangerouslySetInnerHTML={{ __html: embedHtml }}
+        />
       </Wrapper>
     )
   }

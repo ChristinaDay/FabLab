@@ -7,6 +7,9 @@ import EmbedOrImage from '@/components/EmbedOrImage'
 import { fetchVisibleItemsFiltered, fetchFeatured, fetchPicks, fetchRecentExcluding, fetchByTagExcluding, fetchVisibleJobs } from '@/lib/db'
 
 export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
+  const fmtDate = (d: any) => {
+    try { return new Date(d).toISOString().slice(0, 10) } catch { return '' }
+  }
   const mainStories = items.slice(0, 3)
   const [mainHero, ...mainOther] = mainStories
   const restItems = items.slice(3)
@@ -49,7 +52,7 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
                     <a href={item.link} target="_blank" rel="noreferrer" className="block font-semibold hover:underline">
                       {item.title || 'Untitled'}
                     </a>
-                    <div className="text-xs text-gray-500 mt-2">{item.source} • {new Date(item.published_at).toLocaleDateString()}</div>
+                    <div className="text-xs text-gray-500 mt-2">{item.source} • {fmtDate(item.published_at)}</div>
                   </article>
                 ))}
               </div>
@@ -81,7 +84,7 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
                   <a href={it.link} target="_blank" rel="noreferrer" className="block font-condensed uppercase tracking-tight leading-tight text-[2.2rem] sm:text-[3rem] md:text-[3.5rem]">
                     {it.title}
                   </a>
-                  <div className="text-xs text-gray-500 mt-2">{it.source ? `${it.source} • ` : ''}{new Date(it.published_at).toLocaleDateString()}</div>
+                  <div className="text-xs text-gray-500 mt-2">{it.source ? `${it.source} • ` : ''}{fmtDate(it.published_at)}</div>
                   <div className="mt-2 flex items-center justify-between">
                     <LikeButton itemId={it.id} />
                     <BookmarkButton itemId={it.id} />
@@ -110,7 +113,7 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
                       <a href={item.link} target="_blank" rel="noreferrer" className="block text-sm font-semibold leading-snug hover:underline">
                         {item.title}
                       </a>
-                      <div className="text-[11px] text-gray-500 mt-1">{new Date(item.published_at).toLocaleDateString()}</div>
+                      <div className="text-[11px] text-gray-500 mt-1">{fmtDate(item.published_at)}</div>
                     </div>
                   </article>
                 ))}
@@ -128,7 +131,7 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
                         className={item.embed_html ? '' : 'w-full h-44 object-cover'}
                         lazy
                       />
-                      <div className="text-[11px] text-gray-500 mt-1">{new Date(item.published_at).toLocaleDateString()}</div>
+                      <div className="text-[11px] text-gray-500 mt-1">{fmtDate(item.published_at)}</div>
                     </article>
                   ))}
                 </div>
@@ -141,11 +144,7 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
                   <div className="font-semibold">Promote your product</div>
                   <p className="text-sm mt-1">Reach makers and fabricators. Contact us to sponsor.</p>
                 </div>
-                <div className="border p-4">
-                  <div className="text-xs tracking-wide uppercase text-black/70 mb-1">Podcast</div>
-                  <div className="font-semibold">ShopTalk Ep. 093</div>
-                  <a href="#" className="text-sm underline mt-1 inline-block">Listen now</a>
-                </div>
+                {/* Podcast module hidden for now */}
               </div>
             </aside>
           </div>
@@ -175,7 +174,7 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
                       <a href={it.link} target="_blank" rel="noreferrer" className="block font-semibold leading-snug hover:underline">
                         {it.title}
                       </a>
-                      <div className="text-[11px] text-gray-500 mt-1">{it.source} • {new Date(it.published_at).toLocaleDateString()}</div>
+                      <div className="text-[11px] text-gray-500 mt-1">{it.source} • {fmtDate(it.published_at)}</div>
                     </article>
                   ))}
                 </div>
@@ -204,7 +203,7 @@ export default function Home({ items, jobs }: { items: any[]; jobs: any[] }) {
                           {item.excerpt ? (
                             <p className="text-sm mt-1">{item.excerpt.slice(0, 180)}...</p>
                           ) : null}
-                          <div className="text-[11px] text-gray-500 mt-1">{item.source} • {new Date(item.published_at).toLocaleDateString()}</div>
+                          <div className="text-[11px] text-gray-500 mt-1">{item.source} • {fmtDate(item.published_at)}</div>
                         </div>
                       </article>
                     ))}

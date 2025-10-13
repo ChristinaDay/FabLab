@@ -8,6 +8,9 @@ const BookmarkButton = dynamic(() => import('@/components/BookmarkButton'), { ss
 const LikeButton = dynamic(() => import('@/components/LikeButton'), { ssr: false })
 
 export default function SocialPage({ items }: { items: any[] }) {
+  const fmtDate = (d: any) => {
+    try { return new Date(d).toISOString().slice(0, 10) } catch { return '' }
+  }
   return (
     <>
       <Nav />
@@ -32,7 +35,7 @@ export default function SocialPage({ items }: { items: any[] }) {
                   maxHeight={420}
                   collapsible
                 />
-                <div className="text-[11px] text-gray-500 mt-2">{it.source} • {new Date(it.published_at).toLocaleDateString()}</div>
+                <div className="text-[11px] text-gray-500 mt-2">{it.source} • {fmtDate(it.published_at)}</div>
               </article>
             ))}
           </div>

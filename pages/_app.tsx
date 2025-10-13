@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { supabase } from '@/lib/db'
 import { Oswald } from 'next/font/google'
 import Footer from '@/components/Footer'
+import Head from 'next/head'
 
 const oswald = Oswald({
   variable: '--font-condensed',
@@ -18,6 +19,10 @@ export default function MyApp({ Component, pageProps }: AppProps) {
   }, [])
   return (
     <div className={oswald.variable}>
+      <Head>
+        <link rel="icon" href="/globe.svg" />
+        <link rel="apple-touch-icon" href="/shoptalk1.png" />
+      </Head>
       <Component {...pageProps} />
       <Footer />
     </div>

@@ -21,7 +21,10 @@ const oswald = Oswald({
 export const metadata: Metadata = {
   title: "ShopTalk",
   description: "News and jobs for makers and fabricators",
-  icons: "/globe.svg",
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/shoptalk1.png",
+  },
 };
 
 export default function RootLayout({

@@ -41,11 +41,10 @@ export default function Nav() {
   }
   return (
     <header className="w-full sticky top-0 z-40 bg-white border-b">
-      <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-        {/* Wired-like boxed logo */}
-        <a href="/" className="logo-wired text-xl flex items-center">
-          <span className="box">S</span><span className="box">T</span>
-          <span className="box mr-2">N</span>
+      <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+        {/* Logo: image replaces STN boxes; link to home */}
+        <a href="/" className="text-xl flex items-center">
+          <img src="/shoptalk.png" alt="ShopTalk" className="h-16 w-auto mr-3" width={300} height={80} />
           <span className="ml-1 font-bold text-black text-2xl leading-none sm:text-3xl">ShopTalk</span>
           <span className="mx-3 h-5 w-px bg-black/20" aria-hidden="true"></span>
           <span className="text-black/60">News</span>
